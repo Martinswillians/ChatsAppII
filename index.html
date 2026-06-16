@@ -1095,6 +1095,7 @@ function listenSignaling(otherUid){
   const answerRef=ref(fbDb,`signaling/${path}/${remoteUid}/answer`);
   const offerRef=ref(fbDb,`signaling/${path}/${remoteUid}/offer`);
   const candRef=ref(fbDb,`signaling/${path}/${remoteUid}/candidates`);
+  const hangupRef=ref(fbDb,`call_hangup/${path}/${remoteUid}`);
 
   const h1=onValue(answerRef,async(snap)=>{
     if(snap.exists()&&pc&&!pc.currentRemoteDescription){
@@ -1114,17 +1115,25 @@ function listenSignaling(otherUid){
       try{ await pc.addIceCandidate(new RTCIceCandidate(snap.val())); }catch(e){}
     }
   });
+  // O outro lado encerrou a chamada: fecha também aqui, sem reenviar o sinal de volta
+  const h4=onValue(hangupRef,(snap)=>{
+    if(snap.exists()&&document.getElementById('vc').classList.contains('on')){
+      endCall(true);
+    }
+  });
 
   unsubSignal=()=>{
     off(answerRef,'value',h1);
     off(offerRef,'value',h2);
     off(candRef,'child_added',h3);
+    off(hangupRef,'value',h4);
   };
 }
 
 async function cleanupSignaling(otherUid){
   if(!otherUid)return;
   try{ await remove(ref(fbDb,`signaling/${myCallPath(otherUid)}/${currentUser.uid}`)); }catch(e){}
+  try{ await remove(ref(fbDb,`call_hangup/${myCallPath(otherUid)}/${currentUser.uid}`)); }catch(e){}
 }
 
 window.startCall=async()=>{
@@ -1169,16 +1178,26 @@ window.startCall=async()=>{
   });
 };
 
-window.endCall=async()=>{
+window.endCall=async(remoteInitiated)=>{
   document.getElementById('vc').classList.remove('on');
   document.getElementById('remoteVideo').srcObject=null;
   document.getElementById('remoteVideo').style.display='none';
   stopTimer();
   if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
   if(pc){pc.close();pc=null;}
+  const partner=callPartnerId;
+  // Se fui eu que encerrei (não foi o outro lado), avisa o parceiro antes de limpar a sinalização
+  if(!remoteInitiated&&partner&&currentUser){
+    try{ await set(ref(fbDb,`call_hangup/${myCallPath(partner)}/${currentUser.uid}`),true); }catch(e){}
+  }
   if(unsubSignal){unsubSignal();unsubSignal=null;}
   if(currentUser) await remove(ref(fbDb,`calls/${currentUser.uid}`));
-  if(callPartnerId) await cleanupSignaling(callPartnerId);
+  if(partner){
+    // Pequena espera para garantir que o sinal de hangup chegue ao outro lado
+    // antes de remover os nós de sinalização (que incluem o próprio hangup)
+    if(!remoteInitiated) await new Promise(r=>setTimeout(r,800));
+    await cleanupSignaling(partner);
+  }
   callPartnerId=null;
   isCaller=false;
 };
@@ -1237,7 +1256,10 @@ window.rejectCall=async()=>{
   const inc=document.getElementById('inc');
   const fromId=inc.dataset.fromId;
   inc.classList.remove('on');
-  if(fromId) await remove(ref(fbDb,`calls/${currentUser.uid}`));
+  if(fromId&&currentUser){
+    await remove(ref(fbDb,`calls/${currentUser.uid}`));
+    try{ await set(ref(fbDb,`call_hangup/${chatId(currentUser.uid,fromId)}/${currentUser.uid}`),true); }catch(e){}
+  }
 };
 
 window.acceptCall=async()=>{
