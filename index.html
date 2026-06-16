@@ -180,11 +180,20 @@ video { display:block; max-width:100%; max-height:100%; }
 ::-webkit-scrollbar-thumb { background:var(--border);border-radius:2px; }
 
 /* === RESPONSIVO === */
+.back-btn { display:none; }
 @media (max-width:768px){
-  #sidebar { width:100%; }
-  #chat-area { display:none; }
-  #app.on #chat-area.show-mobile { display:flex; }
+  #app { position:relative; overflow:hidden; }
+  #sidebar { width:100%; position:absolute; inset:0; z-index:1; transition:transform .25s ease; }
+  #chat-area { width:100%; position:absolute; inset:0; z-index:2; transform:translateX(100%); transition:transform .25s ease; }
+  #app.show-chat #sidebar { transform:translateX(-100%); }
+  #app.show-chat #chat-area { transform:translateX(0); }
+  .back-btn { display:flex !important; }
   .ci-av,.contact-avatar { width:44px;height:44px; }
+  .chat-hd { padding:8px 10px;gap:8px; }
+  .vid-btn { padding:8px 10px;font-size:0;gap:0; }
+  .vid-btn svg { width:18px;height:18px; }
+  .chat-hd-name { font-size:15px; }
+  .sb-header { padding:10px 12px; }
 }
 
 /* Garante que os controles da chamada nunca fiquem escondidos,
@@ -298,6 +307,9 @@ video { display:block; max-width:100%; max-height:100%; }
     </div>
     <div id="chat-view">
       <div class="chat-hd">
+        <button class="ic-btn back-btn" id="back-btn" onclick="closeMobileChat()" title="Voltar" style="display:none">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
         <div class="chat-hd-av" id="ch-av"></div>
         <div class="chat-hd-info">
           <div class="chat-hd-name" id="ch-name"></div>
@@ -632,7 +644,7 @@ async function onAuthChange(user){
     onDisconnect(ref(fbDb,`users/${user.uid}/online`)).set(false);
     showApp();
   }else{
-    document.getElementById('app').classList.remove('on');
+    document.getElementById('app').classList.remove('on','show-chat');
     showAuth();
   }
 }
@@ -886,6 +898,7 @@ function openChat(uid,c){
   document.querySelectorAll('.ci').forEach(el=>el.classList.toggle('act',el.dataset.uid===uid));
   document.getElementById('empty-st').style.display='none';
   document.getElementById('chat-view').classList.add('on');
+  document.getElementById('app').classList.add('show-chat');
   updateChatHeaderAvatar(c);
   document.getElementById('ch-name').textContent=c.name||'Familiar';
   document.getElementById('ch-status').textContent=c.online?'online':'offline';
@@ -893,6 +906,10 @@ function openChat(uid,c){
   loadMsgs(uid);
   listenTyping(uid);
 }
+
+window.closeMobileChat=()=>{
+  document.getElementById('app').classList.remove('show-chat');
+};
 
 function loadMsgs(contactId){
   const container=document.getElementById('msgs');
