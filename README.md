@@ -66,6 +66,12 @@ No Firebase Console → **Realtime Database** → **Regras**, cole exatamente is
         ".write": "auth != null"
       }
     },
+    "call_hangup": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
     "typing": {
       "$chatId": {
         ".read": "auth != null",
