@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ChatsApp Família</title>
+<title>ChatsApp - Mensagens com privacidade e segurança</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root {
@@ -32,6 +32,8 @@ video { display:block; max-width:100%; max-height:100%; }
 #auth-screen h1 { font-size:26px;font-weight:300;letter-spacing:3px;margin-bottom:6px; }
 #auth-screen > p { color:var(--text2);font-size:13px;margin-bottom:28px;text-align:center;max-width:320px;line-height:1.5; }
 .auth-card { background:var(--bg-chat);border-radius:14px;padding:28px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:14px; }
+.app-footer { color:var(--text2);font-size:12px;margin-top:20px;text-align:center;opacity:.7; }
+.sidebar-footer { color:var(--text2);font-size:11px;text-align:center;padding:8px;opacity:.6;flex-shrink:0; }
 .auth-tabs { display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:4px; }
 .auth-tab { flex:1;padding:10px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text2);cursor:pointer;font-size:14px;font-weight:500;transition:all .2s; }
 .auth-tab.active { color:var(--primary);border-bottom-color:var(--primary); }
@@ -227,7 +229,7 @@ video { display:block; max-width:100%; max-height:100%; }
     <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
   </div>
   <h1>CHATSAPP</h1>
-  <p>Conecte-se com sua família</p>
+  <p>Mensagens, chats com privacidade e segurança<br>para familiares e amigos</p>
   <div class="auth-card">
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchTab('login',this)">Entrar</button>
@@ -272,6 +274,7 @@ video { display:block; max-width:100%; max-height:100%; }
       <button class="btn-primary" onclick="doRegister()">Criar conta</button>
     </div>
   </div>
+  <div class="app-footer">By Will Martins</div>
 </div>
 
 <!-- MAIN APP -->
@@ -283,6 +286,9 @@ video { display:block; max-width:100%; max-height:100%; }
         <span class="my-name" id="my-name"></span>
       </div>
       <div class="sb-actions">
+        <button class="ic-btn" onclick="openCreateGroup()" title="Criar grupo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </button>
         <button class="ic-btn" onclick="openAddContact()" title="Adicionar familiar">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
         </button>
@@ -302,6 +308,7 @@ video { display:block; max-width:100%; max-height:100%; }
         Adicione familiares pelo e-mail para começar a conversar 💚
       </div>
     </div>
+    <div class="sidebar-footer">By Will Martins</div>
   </div>
 
   <div id="chat-area">
@@ -321,12 +328,15 @@ video { display:block; max-width:100%; max-height:100%; }
           <div class="chat-hd-name" id="ch-name"></div>
           <div class="chat-hd-status" id="ch-status">online</div>
         </div>
-        <button class="aud-btn" onclick="startCall('audio')" title="Chamada de áudio">
+        <button class="aud-btn" id="ch-aud-btn" onclick="startCall('audio')" title="Chamada de áudio">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
         </button>
-        <button class="vid-btn" onclick="startCall('video')">
+        <button class="vid-btn" id="ch-vid-btn" onclick="startCall('video')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
           Videochamada
+        </button>
+        <button class="ic-btn" id="ch-group-info-btn" onclick="openGroupInfo()" title="Informações do grupo" style="display:none">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         </button>
         <button class="ic-btn" onclick="clearChat()" title="Limpar conversa">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
@@ -390,6 +400,58 @@ video { display:block; max-width:100%; max-height:100%; }
     </div>
     <div class="err" id="profile-err"></div>
     <button class="btn-primary" onclick="saveProfile()">Salvar alterações</button>
+  </div>
+</div>
+
+<!-- MODAL CRIAR/EDITAR GRUPO -->
+<div class="modal-ov" id="group-modal">
+  <div class="modal" style="max-height:88vh;overflow-y:auto">
+    <button class="modal-x" onclick="closeGroupModal()">✕</button>
+    <h3 id="group-modal-title">👨‍👩‍👧‍👦 Criar grupo</h3>
+    <input class="inp" id="g-name" type="text" placeholder="Nome do grupo">
+    <div class="avatar-section">
+      <div class="avatar-label">Ícone do grupo</div>
+      <div class="avatar-methods">
+        <button class="avatar-method-btn active" id="g-method-emoji" onclick="setGroupAvatarMethod('emoji',this)">😊 Emoji</button>
+        <button class="avatar-method-btn" id="g-method-photo" onclick="setGroupAvatarMethod('photo',this)">📷 Foto</button>
+      </div>
+      <div id="g-panel-emoji">
+        <div class="emoji-grid" id="g-emoji-grid"></div>
+      </div>
+      <div id="g-panel-photo" style="display:none">
+        <div class="photo-upload-area" onclick="document.getElementById('g-photo-file').click()">
+          <input type="file" id="g-photo-file" accept="image/*" style="display:none" onchange="previewGroupPhoto(event)">
+          <img id="g-photo-prev" class="photo-preview" style="display:none">
+          <div id="g-photo-hint">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text2);margin:0 auto 6px;display:block"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <p style="color:var(--text2);font-size:13px">Clique para escolher uma foto</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="avatar-label">Membros</div>
+    <div id="g-members-list" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;background:var(--bg-input);border-radius:8px;padding:8px"></div>
+    <div class="err" id="group-err"></div>
+    <button class="btn-primary" id="group-save-btn" onclick="saveGroup()">Criar grupo</button>
+    <button class="btn-primary" id="group-delete-btn" style="display:none;background:#EF4444" onclick="deleteGroup()">Excluir grupo</button>
+  </div>
+</div>
+
+<!-- MODAL INFORMAÇÕES DO GRUPO -->
+<div class="modal-ov" id="group-info-modal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeGroupInfo()">✕</button>
+    <h3>ℹ️ Informações do grupo</h3>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="chat-hd-av" id="gi-av" style="width:56px;height:56px;font-size:26px"></div>
+      <div>
+        <div style="font-size:17px;font-weight:600" id="gi-name"></div>
+        <div style="font-size:13px;color:var(--text2)" id="gi-count"></div>
+      </div>
+    </div>
+    <div class="avatar-label">Membros</div>
+    <div id="gi-members-list" style="display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto"></div>
+    <button class="btn-primary" id="gi-edit-btn" onclick="openEditGroup()" style="display:none">Editar grupo</button>
   </div>
 </div>
 
@@ -466,6 +528,12 @@ let selectedAv={type:'emoji',emoji:'🦁',color:'#FFA500',photoData:null};
 let photoBase64=null;
 let contacts={}, callTimer=null, callSec=0, localStream=null;
 let muted=false, camOff=false, unsubMsgs=null, typingTimer=null;
+let groups={}, groupProfileUnsubs=[];
+let currentChatType='contact'; // 'contact' ou 'group' — controla o contexto do chat aberto
+let groupModalSelectedMembers={}; // uids selecionados ao criar/editar grupo
+let groupAv={type:'emoji',emoji:'👨‍👩‍👧‍👦',color:'#7B61FF',photoData:null};
+let groupPhotoBase64=null;
+let editingGroupId=null; // se definido, o modal de grupo está em modo edição
 
 // Emojis disponíveis para avatar
 const EMOJIS=[
@@ -603,6 +671,283 @@ window.saveProfile=async()=>{
   }
 };
 
+// =========================================================
+// CRIAR / EDITAR / EXCLUIR GRUPOS
+// =========================================================
+function buildGroupEmojiGrid(){
+  const g=document.getElementById('g-emoji-grid');
+  const groupEmojis=['👨‍👩‍👧‍👦','👨‍👩‍👧','👨‍👩‍👦','🏡','❤️','🎉','⭐','🌟','🎊','🍀','🎵','🌈'];
+  const colors=['#7B61FF','#E67E22','#3498DB','#27AE60','#E91E63','#FF6B35','#9B59B6','#00BCD4','#FFC107','#795548','#607D8B','#FF5722'];
+  g.innerHTML=groupEmojis.map((e,i)=>`
+    <div class="av-opt${i===0?' sel':''}" style="background:${colors[i]}" onclick="selectGroupEmoji(this,'${e}','${colors[i]}')">${e}</div>
+  `).join('');
+}
+
+window.selectGroupEmoji=(el,e,c)=>{
+  document.querySelectorAll('#g-emoji-grid .av-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  groupAv={type:'emoji',emoji:e,color:c,photoData:null};
+};
+
+window.setGroupAvatarMethod=(method,btn)=>{
+  document.querySelectorAll('#group-modal .avatar-method-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('g-panel-emoji').style.display=method==='emoji'?'':'none';
+  document.getElementById('g-panel-photo').style.display=method==='photo'?'':'none';
+};
+
+window.previewGroupPhoto=(e)=>{
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    groupPhotoBase64=ev.target.result;
+    groupAv={type:'photo',emoji:'',color:'#555',photoData:groupPhotoBase64};
+    const prev=document.getElementById('g-photo-prev');
+    prev.src=groupPhotoBase64;
+    prev.style.display='block';
+    document.getElementById('g-photo-hint').style.display='none';
+  };
+  reader.readAsDataURL(file);
+};
+
+function renderGroupMembersChecklist(){
+  const el=document.getElementById('g-members-list');
+  const uids=Object.keys(contacts);
+  if(!uids.length){
+    el.innerHTML='<div style="padding:10px;color:var(--text2);font-size:13px;text-align:center">Adicione familiares primeiro para poder incluí-los em um grupo</div>';
+    return;
+  }
+  el.innerHTML=uids.map(uid=>{
+    const c=contacts[uid];
+    const checked=groupModalSelectedMembers[uid]?'checked':'';
+    return `
+    <label style="display:flex;align-items:center;gap:10px;padding:6px;cursor:pointer;border-radius:6px" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='transparent'">
+      <input type="checkbox" ${checked} onchange="toggleGroupMember('${uid}',this.checked)" style="width:18px;height:18px;accent-color:var(--primary);cursor:pointer">
+      <div class="ci-av" style="width:32px;height:32px;font-size:16px;background:${c.photoData?'transparent':c.color||'#555'}">${c.photoData?`<img src="${c.photoData}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`:c.emoji||'👤'}</div>
+      <span style="font-size:14px">${c.name||'Familiar'}</span>
+    </label>`;
+  }).join('');
+}
+
+window.toggleGroupMember=(uid,checked)=>{
+  if(checked) groupModalSelectedMembers[uid]=true;
+  else delete groupModalSelectedMembers[uid];
+};
+
+window.openCreateGroup=()=>{
+  editingGroupId=null;
+  groupModalSelectedMembers={};
+  groupAv={type:'emoji',emoji:'👨‍👩‍👧‍👦',color:'#7B61FF',photoData:null};
+  groupPhotoBase64=null;
+  document.getElementById('group-modal-title').textContent='👨‍👩‍👧‍👦 Criar grupo';
+  document.getElementById('g-name').value='';
+  document.getElementById('group-err').textContent='';
+  document.getElementById('group-save-btn').textContent='Criar grupo';
+  document.getElementById('group-delete-btn').style.display='none';
+  document.getElementById('g-photo-prev').style.display='none';
+  document.getElementById('g-photo-hint').style.display='';
+  buildGroupEmojiGrid();
+  setGroupAvatarMethod('emoji',document.getElementById('g-method-emoji'));
+  renderGroupMembersChecklist();
+  document.getElementById('group-modal').classList.add('on');
+};
+
+window.openEditGroup=()=>{
+  const g=currentContact;
+  if(!g)return;
+  editingGroupId=g.uid;
+  groupModalSelectedMembers={...(g.members||{})};
+  delete groupModalSelectedMembers[currentUser.uid]; // o criador não aparece na lista de seleção (sempre incluso)
+
+  document.getElementById('group-modal-title').textContent='✏️ Editar grupo';
+  document.getElementById('g-name').value=g.name||'';
+  document.getElementById('group-err').textContent='';
+  document.getElementById('group-save-btn').textContent='Salvar alterações';
+  // Só quem criou o grupo pode excluí-lo
+  document.getElementById('group-delete-btn').style.display=(g.createdBy===currentUser.uid)?'':'none';
+
+  buildGroupEmojiGrid();
+  if(g.photoData){
+    groupAv={type:'photo',emoji:'',color:'#555',photoData:g.photoData};
+    groupPhotoBase64=g.photoData;
+    document.getElementById('g-photo-prev').src=g.photoData;
+    document.getElementById('g-photo-prev').style.display='block';
+    document.getElementById('g-photo-hint').style.display='none';
+    setGroupAvatarMethod('photo',document.getElementById('g-method-photo'));
+  }else{
+    groupAv={type:'emoji',emoji:g.emoji||'👨‍👩‍👧‍👦',color:g.color||'#7B61FF',photoData:null};
+    document.getElementById('g-photo-prev').style.display='none';
+    document.getElementById('g-photo-hint').style.display='';
+    setGroupAvatarMethod('emoji',document.getElementById('g-method-emoji'));
+    setTimeout(()=>{
+      document.querySelectorAll('#g-emoji-grid .av-opt').forEach(el=>{
+        el.classList.toggle('sel',el.textContent.trim()===g.emoji);
+      });
+    },0);
+  }
+
+  renderGroupMembersChecklist();
+  closeGroupInfo();
+  document.getElementById('group-modal').classList.add('on');
+};
+
+window.closeGroupModal=()=>document.getElementById('group-modal').classList.remove('on');
+
+window.saveGroup=async()=>{
+  const name=document.getElementById('g-name').value.trim();
+  const err=document.getElementById('group-err');
+  err.textContent='';
+  if(!name){err.textContent='Digite um nome para o grupo';return;}
+  const selectedUids=Object.keys(groupModalSelectedMembers);
+  if(!selectedUids.length){err.textContent='Selecione ao menos um familiar para o grupo';return;}
+
+  const members={[currentUser.uid]:true};
+  selectedUids.forEach(uid=>members[uid]=true);
+
+  const groupData={
+    name,
+    emoji:groupAv.type==='emoji'?groupAv.emoji:'👨‍👩‍👧‍👦',
+    color:groupAv.type==='emoji'?groupAv.color:'#7B61FF',
+    photoData:groupAv.type==='photo'?groupAv.photoData:null,
+    members
+  };
+
+  try{
+    if(editingGroupId){
+      // Edição: só quem criou pode mexer em membros/dados (regra do Firebase já garante isso)
+      const oldSnap=await get(ref(fbDb,`groups/${editingGroupId}`));
+      const oldMembers=Object.keys(oldSnap.val()?.members||{});
+      const newMembers=Object.keys(members);
+      const removed=oldMembers.filter(u=>!newMembers.includes(u));
+      const added=newMembers.filter(u=>!oldMembers.includes(u));
+
+      await update(ref(fbDb,`groups/${editingGroupId}`),groupData);
+      // Avisa quem foi removido (para a UI dele remover o grupo da lista) e quem entrou (convite)
+      await Promise.all([
+        ...removed.map(u=>set(ref(fbDb,`group_invites/${u}/${editingGroupId}`),{action:'removed',ts:Date.now()})),
+        ...added.map(u=>set(ref(fbDb,`group_invites/${u}/${editingGroupId}`),{action:'added',ts:Date.now()}))
+      ]);
+      showNotif(groupData,'Grupo atualizado','As alterações foram salvas ✅');
+    }else{
+      // Criação: o criador grava o grupo (permitido, pois createdBy será ele) e
+      // envia um convite para cada membro — cada um inscreve a si mesmo ao receber.
+      groupData.createdBy=currentUser.uid;
+      groupData.createdAt=serverTimestamp();
+      const newGroupRef=push(ref(fbDb,'groups'));
+      const gid=newGroupRef.key;
+      await set(newGroupRef,groupData);
+      // O próprio criador já se inscreve direto (permissão própria)
+      await set(ref(fbDb,`users/${currentUser.uid}/groups/${gid}`),true);
+      // Os demais membros recebem um convite e se inscrevem sozinhos ao escutá-lo
+      await Promise.all(selectedUids.map(uid=>
+        set(ref(fbDb,`group_invites/${uid}/${gid}`),{action:'added',ts:Date.now()})
+      ));
+      showNotif(groupData,'Grupo criado','Grupo pronto para conversar 🎉');
+    }
+    closeGroupModal();
+  }catch(e){
+    err.textContent='❌ '+(e.message||'Erro ao salvar grupo');
+  }
+};
+
+// Cada usuário escuta seus próprios convites/avisos de grupo e ajusta sua
+// própria lista users/{meu-uid}/groups — nunca escreve na lista de outro usuário.
+function listenGroupInvites(){
+  if(!currentUser)return;
+  const iRef=ref(fbDb,`group_invites/${currentUser.uid}`);
+  onChildAdded(iRef,async(snap)=>{
+    const gid=snap.key;
+    const invite=snap.val();
+    if(invite.action==='added'){
+      await set(ref(fbDb,`users/${currentUser.uid}/groups/${gid}`),true);
+    }else if(invite.action==='removed'||invite.action==='deleted'){
+      await remove(ref(fbDb,`users/${currentUser.uid}/groups/${gid}`));
+      if(currentChatType==='group'&&currentContact?.uid===gid){
+        document.getElementById('chat-view').classList.remove('on');
+        document.getElementById('empty-st').style.display='';
+        closeMobileChat();
+        currentContact=null;
+      }
+    }
+    await remove(ref(fbDb,`group_invites/${currentUser.uid}/${gid}`));
+  });
+}
+
+window.deleteGroup=async()=>{
+  if(!editingGroupId)return;
+  if(!confirm('Excluir este grupo para todos os membros? Esta ação não pode ser desfeita.'))return;
+  try{
+    const gSnap=await get(ref(fbDb,`groups/${editingGroupId}`));
+    const members=Object.keys(gSnap.val()?.members||{}).filter(u=>u!==currentUser.uid);
+    // Avisa os demais membros para removerem o grupo da própria lista
+    await Promise.all(members.map(uid=>
+      set(ref(fbDb,`group_invites/${uid}/${editingGroupId}`),{action:'deleted',ts:Date.now()})
+    ));
+    // Remove o próprio vínculo e os dados do grupo (permitido: dados do grupo e
+    // a própria entrada em users/{meu-uid}/groups)
+    await remove(ref(fbDb,`users/${currentUser.uid}/groups/${editingGroupId}`));
+    await remove(ref(fbDb,`groups/${editingGroupId}`));
+    await remove(ref(fbDb,`messages/group_${editingGroupId}`));
+    closeGroupModal();
+    if(currentChatType==='group'&&currentContact?.uid===editingGroupId){
+      document.getElementById('chat-view').classList.remove('on');
+      document.getElementById('empty-st').style.display='';
+      closeMobileChat();
+      currentContact=null;
+    }
+  }catch(e){
+    document.getElementById('group-err').textContent='❌ '+(e.message||'Erro ao excluir grupo');
+  }
+};
+
+window.openGroupInfo=()=>{
+  const g=currentContact;
+  if(!g||currentChatType!=='group')return;
+  updateChatHeaderAvatar(g); // garante consistência visual antes de copiar para o modal
+  const giAv=document.getElementById('gi-av');
+  giAv.innerHTML='';
+  if(g.photoData){
+    const img=document.createElement('img');img.src=g.photoData;
+    img.style.cssText='width:100%;height:100%;border-radius:50%;object-fit:cover';
+    giAv.appendChild(img);
+    giAv.style.background='transparent';
+  }else{
+    giAv.textContent=g.emoji||'👨‍👩‍👧‍👦';
+    giAv.style.background=g.color||'#7B61FF';
+    giAv.style.borderRadius='50%';
+  }
+  document.getElementById('gi-name').textContent=g.name||'Grupo';
+  const memberUids=Object.keys(g.members||{});
+  document.getElementById('gi-count').textContent=`${memberUids.length} membro${memberUids.length===1?'':'s'}`;
+
+  const listEl=document.getElementById('gi-members-list');
+  listEl.innerHTML='<div style="color:var(--text2);font-size:13px">Carregando membros...</div>';
+  Promise.all(memberUids.map(uid=>get(ref(fbDb,`users/${uid}`)).then(s=>({uid,data:s.val()})))).then(results=>{
+    listEl.innerHTML=results.map(({uid,data})=>{
+      if(!data)return '';
+      const isCreator=uid===g.createdBy;
+      const avHTML=data.photoData
+        ?`<img src="${data.photoData}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`
+        :data.emoji||'👤';
+      return `
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="ci-av" style="width:36px;height:36px;font-size:18px;background:${data.photoData?'transparent':data.color||'#555'}">${avHTML}</div>
+        <div style="flex:1">
+          <div style="font-size:14px">${data.name||'Familiar'}${uid===currentUser.uid?' (você)':''}</div>
+          ${isCreator?'<div style="font-size:12px;color:var(--primary)">Criador do grupo</div>':''}
+        </div>
+      </div>`;
+    }).join('');
+  });
+
+  // Só quem criou o grupo pode editar/excluir
+  document.getElementById('gi-edit-btn').style.display=(g.createdBy===currentUser.uid)?'':'none';
+  document.getElementById('group-info-modal').classList.add('on');
+};
+
+window.closeGroupInfo=()=>document.getElementById('group-info-modal').classList.remove('on');
+
 window.previewPhoto=(e)=>{
   const file=e.target.files[0];
   if(!file)return;
@@ -739,7 +1084,9 @@ function showApp(){
   renderMyAvatar(document.getElementById('my-av-wrap'));
   buildEP();
   loadContacts();
+  loadGroups();
   listenContactRequests();
+  listenGroupInvites();
   listenNotifications();
   listenCalls();
 }
@@ -764,9 +1111,9 @@ function loadContacts(){
       const handler=onValue(uRef,(uSnap)=>{
         if(uSnap.exists()){
           contacts[cid]=uSnap.val();
-          renderContacts(contacts);
+          renderSidebarList();
           // Atualiza cabeçalho do chat aberto se for esse contato
-          if(currentContact&&currentContact.uid===cid){
+          if(currentChatType==='contact'&&currentContact&&currentContact.uid===cid){
             const c=contacts[cid];
             currentContact={...currentContact,...c};
             document.getElementById('ch-status').textContent=c.online?'online':'offline';
@@ -778,7 +1125,51 @@ function loadContacts(){
       contactProfileUnsubs.push(()=>off(uRef,'value',handler));
     });
 
-    if(!cids.length) renderContacts({});
+    if(!cids.length) renderSidebarList();
+  });
+}
+
+// =========================================================
+// GRUPOS
+// =========================================================
+function loadGroups(){
+  const myRef=ref(fbDb,`users/${currentUser.uid}/groups`);
+  onValue(myRef,(snap)=>{
+    const gids=Object.keys(snap.val()||{});
+
+    groupProfileUnsubs.forEach(u=>u());
+    groupProfileUnsubs=[];
+    groups={};
+
+    gids.forEach(gid=>{
+      const gRef=ref(fbDb,`groups/${gid}`);
+      const handler=onValue(gRef,(gSnap)=>{
+        if(gSnap.exists()){
+          groups[gid]=gSnap.val();
+          renderSidebarList();
+          if(currentChatType==='group'&&currentContact&&currentContact.uid===gid){
+            const g=groups[gid];
+            currentContact={uid:gid,...g};
+            document.getElementById('ch-name').textContent=g.name||'Grupo';
+            document.getElementById('ch-status').textContent=`${Object.keys(g.members||{}).length} membros`;
+            updateChatHeaderAvatar(g);
+          }
+        }else{
+          // Grupo foi excluído ou removido — remove da lista local
+          delete groups[gid];
+          renderSidebarList();
+          if(currentChatType==='group'&&currentContact&&currentContact.uid===gid){
+            closeMobileChat();
+            document.getElementById('chat-view').classList.remove('on');
+            document.getElementById('empty-st').style.display='';
+            currentContact=null;
+          }
+        }
+      });
+      groupProfileUnsubs.push(()=>off(gRef,'value',handler));
+    });
+
+    if(!gids.length) renderSidebarList();
   });
 }
 
@@ -797,38 +1188,54 @@ function updateChatHeaderAvatar(c){
   }
 }
 
-function renderContacts(list){
+// Combina contatos individuais e grupos numa única lista, ordenados pela
+// mensagem mais recente (lastTime), com os mais recentes no topo.
+function renderSidebarList(){
   const el=document.getElementById('contacts-list');
   el.innerHTML='';
-  const keys=Object.keys(list);
-  if(!keys.length){
-    el.innerHTML='<div style="padding:40px 20px;text-align:center;color:var(--text2);font-size:14px;line-height:1.7">Adicione familiares pelo e-mail para começar 💚</div>';
+  const contactEntries=Object.keys(contacts).map(uid=>({uid,data:contacts[uid],type:'contact'}));
+  const groupEntries=Object.keys(groups).map(gid=>({uid:gid,data:groups[gid],type:'group'}));
+  const all=[...contactEntries,...groupEntries];
+
+  if(!all.length){
+    el.innerHTML='<div style="padding:40px 20px;text-align:center;color:var(--text2);font-size:14px;line-height:1.7">Adicione familiares pelo e-mail ou crie um grupo para começar 💚</div>';
     return;
   }
-  keys.forEach(uid=>{
-    const c=list[uid];
+
+  // Ordena por lastTime desc (sem lastTime vai para o final, ordem estável)
+  all.sort((a,b)=>{
+    const ta=a.data.lastTimestamp||0, tb=b.data.lastTimestamp||0;
+    return tb-ta;
+  });
+
+  all.forEach(entry=>{
+    const {uid,data:c,type}=entry;
     const item=document.createElement('div');
-    item.className='ci'; item.dataset.uid=uid;
+    item.className='ci'; item.dataset.uid=uid; item.dataset.type=type;
     const avHTML=c.photoData
       ?`<img src="${c.photoData}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`
-      :c.emoji||'👤';
+      :c.emoji||(type==='group'?'👨‍👩‍👧‍👦':'👤');
+    const nameLabel=type==='group'?`👥 ${c.name||'Grupo'}`:(c.name||'Familiar');
     item.innerHTML=`
       <div class="ci-av" style="background:${c.photoData?'transparent':c.color||'#555'}">
         ${avHTML}
-        ${c.online?'<div class="online-dot"></div>':''}
+        ${type==='contact'&&c.online?'<div class="online-dot"></div>':''}
       </div>
       <div class="ci-info">
-        <div class="ci-name">${c.name||'Familiar'}</div>
+        <div class="ci-name">${nameLabel}</div>
         <div class="ci-last">${c.lastMsg||'Toque para conversar'}</div>
       </div>
       <div class="ci-meta">
         <div class="ci-time">${c.lastTime||''}</div>
         ${c.unread?`<div class="badge">${c.unread}</div>`:''}
       </div>`;
-    item.onclick=()=>openChat(uid,c);
+    item.onclick=()=>type==='group'?openGroupChat(uid,c):openChat(uid,c);
     el.appendChild(item);
   });
 }
+
+// Mantido por compatibilidade com chamadas existentes
+function renderContacts(){ renderSidebarList(); }
 
 window.filterContacts=()=>{
   const q=document.getElementById('search-inp').value.toLowerCase();
@@ -903,6 +1310,7 @@ function listenContactRequests(){
 function chatId(a,b){return [a,b].sort().join('_');}
 
 function openChat(uid,c){
+  currentChatType='contact';
   currentContact={uid,...c};
   document.querySelectorAll('.ci').forEach(el=>el.classList.toggle('act',el.dataset.uid===uid));
   document.getElementById('empty-st').style.display='none';
@@ -911,9 +1319,29 @@ function openChat(uid,c){
   updateChatHeaderAvatar(c);
   document.getElementById('ch-name').textContent=c.name||'Familiar';
   document.getElementById('ch-status').textContent=c.online?'online':'offline';
+  document.getElementById('ch-aud-btn').style.display='';
+  document.getElementById('ch-vid-btn').style.display='';
+  document.getElementById('ch-group-info-btn').style.display='none';
   document.getElementById('typing-ind').classList.remove('on');
   loadMsgs(uid);
   listenTyping(uid);
+}
+
+function openGroupChat(gid,g){
+  currentChatType='group';
+  currentContact={uid:gid,...g};
+  document.querySelectorAll('.ci').forEach(el=>el.classList.toggle('act',el.dataset.uid===gid));
+  document.getElementById('empty-st').style.display='none';
+  document.getElementById('chat-view').classList.add('on');
+  document.getElementById('app').classList.add('show-chat');
+  updateChatHeaderAvatar(g);
+  document.getElementById('ch-name').textContent=g.name||'Grupo';
+  document.getElementById('ch-status').textContent=`${Object.keys(g.members||{}).length} membros`;
+  document.getElementById('ch-aud-btn').style.display='none';
+  document.getElementById('ch-vid-btn').style.display='none';
+  document.getElementById('ch-group-info-btn').style.display='flex';
+  document.getElementById('typing-ind').classList.remove('on');
+  loadGroupMsgs(gid);
 }
 
 window.closeMobileChat=()=>{
@@ -926,6 +1354,20 @@ function loadMsgs(contactId){
   if(unsubMsgs){unsubMsgs();unsubMsgs=null;}
   const cid=chatId(currentUser.uid,contactId);
   const mRef=ref(fbDb,`messages/${cid}`);
+  let loaded=false;
+  const handler=onChildAdded(mRef,(snap)=>{
+    renderMsg(snap.val());
+    if(loaded)scrollBottom();
+  });
+  setTimeout(()=>{loaded=true;scrollBottom();},500);
+  unsubMsgs=()=>off(mRef,'child_added',handler);
+}
+
+function loadGroupMsgs(gid){
+  const container=document.getElementById('msgs');
+  container.innerHTML='';
+  if(unsubMsgs){unsubMsgs();unsubMsgs=null;}
+  const mRef=ref(fbDb,`messages/group_${gid}`);
   let loaded=false;
   const handler=onChildAdded(mRef,(snap)=>{
     renderMsg(snap.val());
@@ -962,11 +1404,28 @@ window.sendMsg=async()=>{
   if(!text||!currentContact)return;
   inp.value='';
   const msg={text,sid:currentUser.uid,sname:currentUser.displayName,ts:Date.now()};
+  const t=new Date();const time=`${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
+
+  if(currentChatType==='group'){
+    const gid=currentContact.uid;
+    await push(ref(fbDb,`messages/group_${gid}`),{...msg,ts:serverTimestamp()});
+    // Atualiza a prévia do grupo para todos os membros, e notifica cada um (exceto quem enviou)
+    const members=Object.keys(currentContact.members||{});
+    await update(ref(fbDb,`groups/${gid}`),{lastMsg:`${currentUser.displayName}: ${text}`,lastTime:time,lastTimestamp:Date.now()});
+    await Promise.all(members.filter(m=>m!==currentUser.uid).map(m=>
+      set(ref(fbDb,`notifications/${m}/group_${gid}`),{
+        name:`${currentContact.name} (grupo)`,emoji:currentContact.emoji||'👨‍👩‍👧‍👦',
+        color:currentContact.color||'#7B61FF',photoData:currentContact.photoData||null,
+        text:`${currentUser.displayName}: ${text}`,ts:Date.now()
+      })
+    ));
+    return;
+  }
+
   const cid=chatId(currentUser.uid,currentContact.uid);
   await push(ref(fbDb,`messages/${cid}`),{...msg,ts:serverTimestamp()});
   // Atualizar última mensagem
-  const t=new Date();const time=`${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
-  await update(ref(fbDb,`users/${currentUser.uid}/contacts/${currentContact.uid}`),{lastMsg:text,lastTime:time});
+  await update(ref(fbDb,`users/${currentUser.uid}/contacts/${currentContact.uid}`),{lastMsg:text,lastTime:time,lastTimestamp:Date.now()});
   // Notificar outro usuário
   await set(ref(fbDb,`notifications/${currentContact.uid}/${currentUser.uid}`),{
     name:currentUser.displayName,emoji:currentUser.emoji,color:currentUser.color,
@@ -1032,7 +1491,8 @@ function listenNotifications(){
   const nRef=ref(fbDb,`notifications/${currentUser.uid}`);
   onChildAdded(nRef,async(snap)=>{
     const d=snap.val();
-    if(!currentContact||snap.key!==currentContact.uid){
+    const expectedKey=currentContact?(currentChatType==='group'?`group_${currentContact.uid}`:currentContact.uid):null;
+    if(!currentContact||snap.key!==expectedKey){
       showNotif(d,d.name,d.text);
     }
     await remove(ref(fbDb,`notifications/${currentUser.uid}/${snap.key}`));
