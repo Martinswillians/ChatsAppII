@@ -16,7 +16,7 @@ html,body { width:100%; height:100%; }
 body { font-family:'Segoe UI',sans-serif; background:var(--bg-chat); color:var(--text); overflow:hidden; display:flex; flex-direction:column; position:fixed; top:0; left:0; right:0; bottom:0; }
 video { display:block; max-width:100%; max-height:100%; }
 
-.inp { background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-size:14px;outline:none;width:100%;transition:border-color .2s; }
+.inp { background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-size:16px;outline:none;width:100%;transition:border-color .2s; }
 .inp:focus { border-color:var(--primary); }
 .inp::placeholder { color:var(--text2); }
 .btn-primary { background:var(--primary);color:white;border:none;border-radius:8px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s;width:100%; }
@@ -65,7 +65,7 @@ video { display:block; max-width:100%; max-height:100%; }
 .ic-btn:hover { background:var(--hover);color:var(--text); }
 .sb-search { padding:8px 12px;background:var(--bg-sidebar); }
 .search-wrap { display:flex;align-items:center;background:var(--bg-input);border-radius:8px;padding:8px 12px;gap:8px; }
-.search-wrap input { background:none;border:none;color:var(--text);font-size:14px;outline:none;flex:1; }
+.search-wrap input { background:none;border:none;color:var(--text);font-size:16px;outline:none;flex:1; }
 .search-wrap input::placeholder { color:var(--text2); }
 #contacts-list { flex:1;overflow-y:auto; }
 #contacts-list::-webkit-scrollbar { width:4px; }
@@ -106,6 +106,8 @@ video { display:block; max-width:100%; max-height:100%; }
 .chat-hd-status { font-size:13px;color:var(--primary);margin-top:1px; }
 .vid-btn { background:var(--primary);border:none;color:white;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;transition:background .2s; }
 .vid-btn:hover { background:var(--primary-dark); }
+.aud-btn { background:var(--bg-input);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0; }
+.aud-btn:hover { background:var(--hover); }
 #msgs { flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:3px; }
 #msgs::-webkit-scrollbar { width:4px; }
 #msgs::-webkit-scrollbar-thumb { background:var(--border);border-radius:2px; }
@@ -125,7 +127,7 @@ video { display:block; max-width:100%; max-height:100%; }
 .emoji-btn,.att-btn { background:none;border:none;color:var(--text2);cursor:pointer;font-size:22px;padding:6px;border-radius:50%;transition:all .2s;display:flex;align-items:center;justify-content:center; }
 .emoji-btn:hover,.att-btn:hover { color:var(--text);background:var(--hover); }
 .inp-wrap { flex:1;background:var(--bg-input);border-radius:22px;padding:10px 16px;display:flex;align-items:center; }
-.inp-wrap input { background:none;border:none;color:var(--text);font-size:15px;outline:none;width:100%; }
+.inp-wrap input { background:none;border:none;color:var(--text);font-size:16px;outline:none;width:100%; }
 .inp-wrap input::placeholder { color:var(--text2); }
 .send-btn { width:44px;height:44px;background:var(--primary);border:none;border-radius:50%;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s; }
 .send-btn:hover { background:var(--primary-dark); }
@@ -143,6 +145,9 @@ video { display:block; max-width:100%; max-height:100%; }
 .vc-name { font-size:22px;font-weight:500;color:white; }
 .vc-status { font-size:15px;color:rgba(255,255,255,.6); }
 .vc-pip { position:absolute;bottom:20px;right:20px;width:120px;height:180px;background:#222;border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,.2);z-index:10; }
+#vc.audio-mode .vc-pip { display:none; }
+#vc.audio-mode .vc-av { width:130px;height:130px;font-size:60px; }
+#vc.audio-mode .c-cam { display:none; }
 #localVideo { width:100%;height:100%;object-fit:cover; }
 #remoteVideo { width:100%;height:100%;object-fit:cover;display:none; }
 .vc-timer { position:absolute;top:18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.5);padding:5px 14px;border-radius:20px;font-size:15px;color:white;font-family:monospace;z-index:10; }
@@ -189,9 +194,10 @@ video { display:block; max-width:100%; max-height:100%; }
   #app.show-chat #chat-area { transform:translateX(0); }
   .back-btn { display:flex !important; }
   .ci-av,.contact-avatar { width:44px;height:44px; }
-  .chat-hd { padding:8px 10px;gap:8px; }
-  .vid-btn { padding:8px 10px;font-size:0;gap:0; }
-  .vid-btn svg { width:18px;height:18px; }
+  .chat-hd { padding:8px 8px;gap:6px; }
+  .vid-btn { padding:8px 9px;font-size:0;gap:0; }
+  .vid-btn svg { width:17px;height:17px; }
+  .aud-btn { width:32px;height:32px; }
   .chat-hd-name { font-size:15px; }
   .sb-header { padding:10px 12px; }
 }
@@ -315,7 +321,10 @@ video { display:block; max-width:100%; max-height:100%; }
           <div class="chat-hd-name" id="ch-name"></div>
           <div class="chat-hd-status" id="ch-status">online</div>
         </div>
-        <button class="vid-btn" onclick="startCall()">
+        <button class="aud-btn" onclick="startCall('audio')" title="Chamada de áudio">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+        </button>
+        <button class="vid-btn" onclick="startCall('video')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
           Videochamada
         </button>
@@ -415,7 +424,7 @@ video { display:block; max-width:100%; max-height:100%; }
 <div class="inc" id="inc">
   <div class="inc-av" id="inc-av"></div>
   <div class="inc-name" id="inc-name"></div>
-  <div class="inc-type">📹 Videochamada</div>
+  <div class="inc-type" id="inc-type">📹 Videochamada</div>
   <div class="inc-btns">
     <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
       <button class="rej-btn" onclick="rejectCall()">
@@ -1052,6 +1061,7 @@ let pc=null;            // RTCPeerConnection
 let callPartnerId=null; // uid do outro lado da chamada
 let unsubSignal=null;   // cleanup do listener de sinalização
 let isCaller=false;
+let isAudioCall=false;  // true quando a chamada atual é só de áudio
 
 function myCallPath(otherUid){ return chatId(currentUser.uid,otherUid); }
 
@@ -1066,9 +1076,13 @@ function createPeerConnection(otherUid){
 
   pc.ontrack=(e)=>{
     const rv=document.getElementById('remoteVideo');
+    // Sempre atribui a stream para garantir que o áudio remoto seja reproduzido
+    // (o elemento <video> também reproduz as tracks de áudio do MediaStream)
     rv.srcObject=e.streams[0];
-    rv.style.display='block';
-    document.getElementById('vc-avatar-area').style.display='none';
+    if(e.track.kind==='video'){
+      rv.style.display='block';
+      document.getElementById('vc-avatar-area').style.display='none';
+    }
   };
 
   pc.onconnectionstatechange=()=>{
@@ -1136,11 +1150,14 @@ async function cleanupSignaling(otherUid){
   try{ await remove(ref(fbDb,`call_hangup/${myCallPath(otherUid)}/${currentUser.uid}`)); }catch(e){}
 }
 
-window.startCall=async()=>{
+window.startCall=async(callType)=>{
   if(!currentContact)return;
+  callType=callType||'video';
+  isAudioCall=callType==='audio';
   callPartnerId=currentContact.uid;
   isCaller=true;
   document.getElementById('vc').classList.add('on');
+  document.getElementById('vc').classList.toggle('audio-mode',isAudioCall);
   const vcAv=document.getElementById('vc-av');
   document.getElementById('vc-avatar-area').style.display='flex';
   document.getElementById('remoteVideo').style.display='none';
@@ -1152,11 +1169,15 @@ window.startCall=async()=>{
     vcAv.style.background=currentContact.color||'#555';
   }
   document.getElementById('vc-name').textContent=currentContact.name;
-  document.getElementById('vc-st').textContent='Chamando...';
+  document.getElementById('vc-st').textContent=isAudioCall?'Chamando (áudio)...':'Chamando...';
+  // Em chamada de áudio, o botão de câmera começa desligado
+  camOff=isAudioCall;
+  document.getElementById('b-cam').classList.toggle('c-on',camOff);
 
   try{
-    localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    localStream=await navigator.mediaDevices.getUserMedia({video:!isAudioCall,audio:true});
     document.getElementById('localVideo').srcObject=localStream;
+    document.querySelector('.vc-pip').style.display=isAudioCall?'none':'';
   }catch(e){
     document.getElementById('vc-st').textContent='Câmera/microfone indisponível';
   }
@@ -1174,14 +1195,15 @@ window.startCall=async()=>{
   await set(ref(fbDb,`calls/${callPartnerId}`),{
     from:currentUser.uid,fromName:currentUser.displayName,
     emoji:currentUser.emoji,color:currentUser.color,photoData:currentUser.photoData||null,
-    ts:Date.now()
+    callType,ts:Date.now()
   });
 };
 
 window.endCall=async(remoteInitiated)=>{
-  document.getElementById('vc').classList.remove('on');
+  document.getElementById('vc').classList.remove('on','audio-mode');
   document.getElementById('remoteVideo').srcObject=null;
   document.getElementById('remoteVideo').style.display='none';
+  document.querySelector('.vc-pip').style.display='';
   stopTimer();
   if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
   if(pc){pc.close();pc=null;}
@@ -1200,6 +1222,11 @@ window.endCall=async(remoteInitiated)=>{
   }
   callPartnerId=null;
   isCaller=false;
+  isAudioCall=false;
+  camOff=false;
+  muted=false;
+  document.getElementById('b-mute').classList.remove('c-on');
+  document.getElementById('b-cam').classList.remove('c-on');
 };
 
 window.toggleMute=()=>{
@@ -1235,6 +1262,7 @@ function listenCalls(){
     const d=snap.val();
     const inc=document.getElementById('inc');
     const incAv=document.getElementById('inc-av');
+    const callType=d.callType||'video';
     if(d.photoData){
       incAv.innerHTML=`<img src="${d.photoData}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
       incAv.style.background='transparent';
@@ -1243,12 +1271,14 @@ function listenCalls(){
       incAv.style.background=d.color||'#555';
     }
     document.getElementById('inc-name').textContent=d.fromName||'Familiar';
+    document.getElementById('inc-type').textContent=callType==='audio'?'📞 Chamada de áudio':'📹 Videochamada';
     inc.classList.add('on');
     inc.dataset.fromId=d.from;
     inc.dataset.fromName=d.fromName||'Familiar';
     inc.dataset.fromEmoji=d.emoji||'👤';
     inc.dataset.fromColor=d.color||'#555';
     inc.dataset.fromPhoto=d.photoData||'';
+    inc.dataset.callType=callType;
   });
 }
 
@@ -1269,12 +1299,15 @@ window.acceptCall=async()=>{
   const fromEmoji=inc.dataset.fromEmoji;
   const fromColor=inc.dataset.fromColor;
   const fromPhoto=inc.dataset.fromPhoto;
+  const callType=inc.dataset.callType||'video';
   inc.classList.remove('on');
   if(!fromId)return;
 
+  isAudioCall=callType==='audio';
   callPartnerId=fromId;
   isCaller=false;
   document.getElementById('vc').classList.add('on');
+  document.getElementById('vc').classList.toggle('audio-mode',isAudioCall);
   const vcAv=document.getElementById('vc-av');
   document.getElementById('vc-avatar-area').style.display='flex';
   document.getElementById('remoteVideo').style.display='none';
@@ -1287,10 +1320,13 @@ window.acceptCall=async()=>{
   }
   document.getElementById('vc-name').textContent=fromName;
   document.getElementById('vc-st').textContent='Conectando...';
+  camOff=isAudioCall;
+  document.getElementById('b-cam').classList.toggle('c-on',camOff);
 
   try{
-    localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    localStream=await navigator.mediaDevices.getUserMedia({video:!isAudioCall,audio:true});
     document.getElementById('localVideo').srcObject=localStream;
+    document.querySelector('.vc-pip').style.display=isAudioCall?'none':'';
   }catch(e){
     document.getElementById('vc-st').textContent='Câmera/microfone indisponível';
   }
