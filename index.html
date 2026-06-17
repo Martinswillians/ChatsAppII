@@ -1062,11 +1062,13 @@ let callPartnerId=null; // uid do outro lado da chamada
 let unsubSignal=null;   // cleanup do listener de sinalização
 let isCaller=false;
 let isAudioCall=false;  // true quando a chamada atual é só de áudio
+let remoteDescSet=false; // marca, de forma síncrona, se já processamos o offer/answer remoto desta chamada
 
 function myCallPath(otherUid){ return chatId(currentUser.uid,otherUid); }
 
 function createPeerConnection(otherUid){
   pc=new RTCPeerConnection(RTC_CONFIG);
+  remoteDescSet=false;
 
   pc.onicecandidate=(e)=>{
     if(e.candidate){
@@ -1112,16 +1114,28 @@ function listenSignaling(otherUid){
   const hangupRef=ref(fbDb,`call_hangup/${path}/${remoteUid}`);
 
   const h1=onValue(answerRef,async(snap)=>{
-    if(snap.exists()&&pc&&!pc.currentRemoteDescription){
-      await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
+    if(snap.exists()&&pc&&!remoteDescSet){
+      remoteDescSet=true; // marca ANTES do await: bloqueia qualquer disparo concorrente do mesmo evento
+      try{
+        await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
+      }catch(e){
+        console.error('Erro ao aplicar answer remoto:',e);
+        remoteDescSet=false; // permite nova tentativa se essa falhar por outro motivo
+      }
     }
   });
   const h2=onValue(offerRef,async(snap)=>{
-    if(snap.exists()&&pc&&!isCaller&&!pc.currentRemoteDescription){
-      await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
-      const answer=await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      await set(ref(fbDb,`signaling/${path}/${currentUser.uid}/answer`),{type:answer.type,sdp:answer.sdp});
+    if(snap.exists()&&pc&&!isCaller&&!remoteDescSet){
+      remoteDescSet=true; // marca ANTES do await, mesma proteção do h1
+      try{
+        await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
+        const answer=await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await set(ref(fbDb,`signaling/${path}/${currentUser.uid}/answer`),{type:answer.type,sdp:answer.sdp});
+      }catch(e){
+        console.error('Erro ao processar offer remoto:',e);
+        remoteDescSet=false;
+      }
     }
   });
   const h3=onChildAdded(candRef,async(snap)=>{
