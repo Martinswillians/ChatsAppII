@@ -1053,16 +1053,15 @@ function showNotif(sender,title,text){
 // =========================================================
 // VIDEO CALL (WebRTC real, sinalização via Firebase)
 // =========================================================
+// =========================================================
+// Servidor TURN/STUN (conta própria no Metered.ca)
+// =========================================================
 const RTC_CONFIG={iceServers:[
-  {urls:'stun:stun.l.google.com:19302'},
-  {urls:'stun:stun1.l.google.com:19302'},
-  // Servidor TURN gratuito (Open Relay Project) — necessário quando a conexão
-  // direta entre os dois dispositivos não é possível (redes diferentes, NAT
-  // restritivo, firewall corporativo). Sem TURN, chamadas entre redes distintas
-  // costumam travar em "Conexão perdida" mesmo com STUN configurado.
-  {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
-  {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
-  {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
+  {urls:'stun:stun.relay.metered.ca:80'},
+  {urls:'turn:global.relay.metered.ca:80',username:'b28b4a87233aae1945864e64',credential:'D8K32xI5ATbv25ps'},
+  {urls:'turn:global.relay.metered.ca:80?transport=tcp',username:'b28b4a87233aae1945864e64',credential:'D8K32xI5ATbv25ps'},
+  {urls:'turn:global.relay.metered.ca:443',username:'b28b4a87233aae1945864e64',credential:'D8K32xI5ATbv25ps'},
+  {urls:'turns:global.relay.metered.ca:443?transport=tcp',username:'b28b4a87233aae1945864e64',credential:'D8K32xI5ATbv25ps'}
 ]};
 let pc=null;            // RTCPeerConnection
 let callPartnerId=null; // uid do outro lado da chamada
