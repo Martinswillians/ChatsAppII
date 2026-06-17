@@ -1055,7 +1055,14 @@ function showNotif(sender,title,text){
 // =========================================================
 const RTC_CONFIG={iceServers:[
   {urls:'stun:stun.l.google.com:19302'},
-  {urls:'stun:stun1.l.google.com:19302'}
+  {urls:'stun:stun1.l.google.com:19302'},
+  // Servidor TURN gratuito (Open Relay Project) — necessário quando a conexão
+  // direta entre os dois dispositivos não é possível (redes diferentes, NAT
+  // restritivo, firewall corporativo). Sem TURN, chamadas entre redes distintas
+  // costumam travar em "Conexão perdida" mesmo com STUN configurado.
+  {urls:'turn:openrelay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+  {urls:'turn:openrelay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
 ]};
 let pc=null;            // RTCPeerConnection
 let callPartnerId=null; // uid do outro lado da chamada
@@ -1072,8 +1079,18 @@ function createPeerConnection(otherUid){
 
   pc.onicecandidate=(e)=>{
     if(e.candidate){
+      // Log do tipo de candidato: host (rede local), srflx (via STUN, IP público
+      // descoberto), relay (via TURN). Se nunca aparecer "relay" nos logs,
+      // o servidor TURN não está sendo alcançado pelo navegador.
+      const type=e.candidate.type||'desconhecido';
+      console.log(`[WebRTC] candidato local gerado: type=${type} protocol=${e.candidate.protocol} address=${e.candidate.address||e.candidate.candidate}`);
       push(ref(fbDb,`signaling/${myCallPath(otherUid)}/${currentUser.uid}/candidates`),e.candidate.toJSON());
+    }else{
+      console.log('[WebRTC] coleta de candidatos locais finalizada (candidato nulo)');
     }
+  };
+  pc.onicegatheringstatechange=()=>{
+    console.log('[WebRTC] iceGatheringState:',pc.iceGatheringState);
   };
 
   pc.ontrack=(e)=>{
@@ -1085,16 +1102,47 @@ function createPeerConnection(otherUid){
       rv.style.display='block';
       document.getElementById('vc-avatar-area').style.display='none';
     }
+    // Receber uma track remota é evidência prática de que a chamada está
+    // funcionando, mesmo que connectionstatechange ainda não tenha confirmado
+    // o estado "connected" formalmente. Garante que o timer sempre inicie.
+    document.getElementById('vc-st').textContent='Em chamada';
+    if(!callTimer) startTimer();
   };
 
   pc.onconnectionstatechange=()=>{
+    console.log('[WebRTC] connectionState:',pc.connectionState);
     if(pc.connectionState==='connected'){
       document.getElementById('vc-st').textContent='Em chamada';
       if(!callTimer) startTimer();
-    }
-    if(pc.connectionState==='disconnected'||pc.connectionState==='failed'){
+    }else if(pc.connectionState==='connecting'){
+      document.getElementById('vc-st').textContent='Conectando...';
+    }else if(pc.connectionState==='failed'){
       document.getElementById('vc-st').textContent='Conexão perdida';
+      stopTimer();
+      // Diagnóstico: mostra qual par de candidatos foi tentado e por que falhou
+      pc.getStats(null).then(stats=>{
+        stats.forEach(report=>{
+          if(report.type==='candidate-pair'){
+            console.log('[WebRTC] candidate-pair:',report.state,
+              '| local:',stats.get(report.localCandidateId)?.candidateType,
+              '| remote:',stats.get(report.remoteCandidateId)?.candidateType);
+          }
+        });
+      }).catch(()=>{});
+    }else if(pc.connectionState==='disconnected'){
+      // "disconnected" pode ser temporário (rede instável) e se recuperar sozinho;
+      // só declara perdida se persistir por alguns segundos
+      document.getElementById('vc-st').textContent='Reconectando...';
+      setTimeout(()=>{
+        if(pc&&pc.connectionState==='disconnected'){
+          document.getElementById('vc-st').textContent='Conexão perdida';
+          stopTimer();
+        }
+      },5000);
     }
+  };
+  pc.oniceconnectionstatechange=()=>{
+    console.log('[WebRTC] iceConnectionState:',pc.iceConnectionState);
   };
 
   if(localStream){
@@ -1263,7 +1311,7 @@ function startTimer(){
     document.getElementById('vc-timer').textContent=`${m}:${s}`;
   },1000);
 }
-function stopTimer(){clearInterval(callTimer);document.getElementById('vc-timer').textContent='00:00';}
+function stopTimer(){clearInterval(callTimer);callTimer=null;document.getElementById('vc-timer').textContent='00:00';}
 
 // Incoming call listener
 function listenCalls(){
