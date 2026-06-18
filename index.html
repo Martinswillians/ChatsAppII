@@ -40,6 +40,10 @@ video { display:block; max-width:100%; max-height:100%; }
 
 /* Avatar selector */
 .avatar-section { display:flex;flex-direction:column;gap:10px; }
+.restricted-section { border-top:1px solid var(--border);padding-top:14px;margin-top:4px; }
+.restricted-toggle { display:flex;align-items:flex-start;gap:10px;cursor:pointer; }
+.restricted-toggle input { width:20px;height:20px;accent-color:var(--primary);cursor:pointer;flex-shrink:0;margin-top:2px; }
+.restricted-email-item { display:flex;align-items:center;justify-content:space-between;background:var(--bg-input);border-radius:8px;padding:8px 12px;font-size:13px; }
 .avatar-label { font-size:13px;color:var(--text2); }
 .avatar-methods { display:flex;gap:8px; }
 .avatar-method-btn { flex:1;padding:8px;border:1px solid var(--border);background:transparent;color:var(--text2);border-radius:8px;cursor:pointer;font-size:12px;transition:all .2s; }
@@ -128,6 +132,17 @@ video { display:block; max-width:100%; max-height:100%; }
 .chat-inp { padding:10px 14px;background:var(--bg-sidebar);display:flex;align-items:center;gap:10px;flex-shrink:0;position:relative; }
 .emoji-btn,.att-btn { background:none;border:none;color:var(--text2);cursor:pointer;font-size:22px;padding:6px;border-radius:50%;transition:all .2s;display:flex;align-items:center;justify-content:center; }
 .emoji-btn:hover,.att-btn:hover { color:var(--text);background:var(--hover); }
+.file-preview-bar { display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg-input);border-top:1px solid var(--border); }
+.file-preview-thumb { width:40px;height:40px;border-radius:8px;background:var(--bg-sidebar);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0; }
+.file-preview-thumb img { width:100%;height:100%;object-fit:cover; }
+.file-preview-info { flex:1;min-width:0; }
+.file-preview-name { font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.file-preview-size { font-size:11px;color:var(--text2); }
+.msg-file { display:flex;align-items:center;gap:10px;padding:8px;background:rgba(0,0,0,.15);border-radius:8px;cursor:pointer;text-decoration:none;color:inherit; }
+.msg-file-icon { width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0; }
+.msg-file-name { font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px; }
+.msg-file-size { font-size:11px;color:var(--text2); }
+.msg-image { max-width:240px;max-height:240px;border-radius:8px;display:block;cursor:pointer;margin-bottom:4px; }
 .inp-wrap { flex:1;background:var(--bg-input);border-radius:22px;padding:10px 16px;display:flex;align-items:center; }
 .inp-wrap input { background:none;border:none;color:var(--text);font-size:16px;outline:none;width:100%; }
 .inp-wrap input::placeholder { color:var(--text2); }
@@ -156,7 +171,7 @@ video { display:block; max-width:100%; max-height:100%; }
 .vc-ctrl { flex:0 0 auto;padding:22px;background:rgba(0,0,0,.9);display:flex;justify-content:center;gap:18px;position:relative;z-index:20; }
 .c-btn { width:62px;height:62px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;transition:all .2s; }
 .c-btn:active { transform:scale(.9); }
-.c-mute,.c-cam { background:#374151;color:white; }
+.c-mute,.c-cam,.c-speaker { background:#374151;color:white; }
 .c-end { background:#EF4444;color:white; }
 .c-on { background:var(--primary) !important; }
 .inc { display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1999;flex-direction:column;align-items:center;justify-content:center;gap:18px; }
@@ -346,6 +361,10 @@ video { display:block; max-width:100%; max-height:100%; }
       <div class="typing" id="typing-ind"></div>
       <div class="chat-inp">
         <div class="ep" id="ep"></div>
+        <input type="file" id="file-input" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none" onchange="handleFileSelect(event)">
+        <button class="att-btn" onclick="document.getElementById('file-input').click()" title="Anexar arquivo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+        </button>
         <button class="emoji-btn" onclick="toggleEP()">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
         </button>
@@ -354,6 +373,16 @@ video { display:block; max-width:100%; max-height:100%; }
         </div>
         <button class="send-btn" onclick="sendMsg()">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+      <div class="file-preview-bar" id="file-preview-bar" style="display:none">
+        <div class="file-preview-thumb" id="file-preview-thumb"></div>
+        <div class="file-preview-info">
+          <div class="file-preview-name" id="file-preview-name"></div>
+          <div class="file-preview-size" id="file-preview-size"></div>
+        </div>
+        <button class="ic-btn" onclick="cancelFileAttachment()" title="Remover anexo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
     </div>
@@ -399,7 +428,46 @@ video { display:block; max-width:100%; max-height:100%; }
       </div>
     </div>
     <div class="err" id="profile-err"></div>
+    <div class="restricted-section">
+      <label class="restricted-toggle">
+        <input type="checkbox" id="p-restricted-check" onchange="onRestrictedToggle(this.checked)">
+        <div>
+          <div style="font-weight:600;font-size:14px">🔒 Lista restrita</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">Permite conversar, ligar e ver grupos apenas com e-mails cadastrados nesta lista. Indicado para contas de crianças/adolescentes.</div>
+        </div>
+      </label>
+      <div id="p-restricted-manage" style="display:none">
+        <button class="avatar-method-btn" style="width:100%;margin-top:8px;padding:10px" onclick="openManageRestricted()">Gerenciar e-mails permitidos</button>
+      </div>
+    </div>
     <button class="btn-primary" onclick="saveProfile()">Salvar alterações</button>
+  </div>
+</div>
+
+<!-- MODAL VALIDAÇÃO DE SENHA (lista restrita) -->
+<div class="modal-ov" id="restricted-auth-modal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeRestrictedAuth()">✕</button>
+    <h3>🔒 Confirme sua senha</h3>
+    <p style="font-size:13px;color:var(--text2)" id="restricted-auth-desc">Por segurança, digite sua senha para alterar as configurações de lista restrita.</p>
+    <input class="inp" id="restricted-auth-pass" type="password" placeholder="Sua senha">
+    <div class="err" id="restricted-auth-err"></div>
+    <button class="btn-primary" onclick="confirmRestrictedAuth()">Confirmar</button>
+  </div>
+</div>
+
+<!-- MODAL GERENCIAR LISTA RESTRITA -->
+<div class="modal-ov" id="manage-restricted-modal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeManageRestricted()">✕</button>
+    <h3>🔒 E-mails permitidos</h3>
+    <p style="font-size:13px;color:var(--text2)">Apenas familiares com e-mail nesta lista poderão trocar mensagens, fazer chamadas, ver grupos ou ser adicionados.</p>
+    <div style="display:flex;gap:8px">
+      <input class="inp" id="restricted-new-email" type="email" placeholder="email@exemplo.com" style="flex:1">
+      <button class="btn-primary" style="width:auto;padding:11px 16px" onclick="addRestrictedEmail()">+</button>
+    </div>
+    <div class="err" id="restricted-manage-err"></div>
+    <div id="restricted-emails-list" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -473,6 +541,9 @@ video { display:block; max-width:100%; max-height:100%; }
     <button class="c-btn c-mute" id="b-mute" onclick="toggleMute()" title="Microfone">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93H2c0 4.42 3.39 8.07 7.78 8.72L10 17.93V21h4v-3.07l.22.01C18.61 17.07 22 13.42 22 9h-2c0 4.08-3.06 7.44-7 7.93V16h-2v-.07z"/></svg>
     </button>
+    <button class="c-btn c-speaker" id="b-speaker" onclick="toggleSpeaker()" title="Viva-voz">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1-3.29-2.5-4.03v8.05c1.5-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+    </button>
     <button class="c-btn c-end" onclick="endCall()">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
     </button>
@@ -505,7 +576,7 @@ video { display:block; max-width:100%; max-height:100%; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, set, get, push, onChildAdded, onValue, off, update, onDisconnect, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 // =========================================================
@@ -534,6 +605,9 @@ let groupModalSelectedMembers={}; // uids selecionados ao criar/editar grupo
 let groupAv={type:'emoji',emoji:'👨‍👩‍👧‍👦',color:'#7B61FF',photoData:null};
 let groupPhotoBase64=null;
 let editingGroupId=null; // se definido, o modal de grupo está em modo edição
+let restrictedMode=false; // true quando o modo de lista restrita está ativo para este usuário
+let allowedUids={}; // uids permitidos quando restrictedMode=true: {uid: email}
+let restrictedModalAction=null; // 'enable','add','remove' — ação pendente de validação de senha
 
 // Emojis disponíveis para avatar
 const EMOJIS=[
@@ -639,6 +713,9 @@ window.showProfile=()=>{
     },0);
   }
 
+  document.getElementById('p-restricted-check').checked=!!currentUser.restricted;
+  document.getElementById('p-restricted-manage').style.display=currentUser.restricted?'':'none';
+
   document.getElementById('profile-modal').classList.add('on');
 };
 
@@ -672,7 +749,179 @@ window.saveProfile=async()=>{
 };
 
 // =========================================================
-// CRIAR / EDITAR / EXCLUIR GRUPOS
+// LISTA RESTRITA (controle parental)
+// =========================================================
+// Ao marcar/desmarcar o checkbox, sempre exige confirmação de senha antes de
+// efetivar a alteração — evita que a criança simplesmente desmarque a opção
+// sem que um responsável precise digitar a senha da conta.
+window.onRestrictedToggle=(checked)=>{
+  // Reverte visualmente até a senha ser confirmada
+  document.getElementById('p-restricted-check').checked=!checked;
+  restrictedModalAction={type:checked?'enable':'disable'};
+  document.getElementById('restricted-auth-desc').textContent=checked
+    ?'Por segurança, digite sua senha para ativar a lista restrita.'
+    :'Por segurança, digite sua senha para desativar a lista restrita.';
+  document.getElementById('restricted-auth-pass').value='';
+  document.getElementById('restricted-auth-err').textContent='';
+  document.getElementById('restricted-auth-modal').classList.add('on');
+  setTimeout(()=>document.getElementById('restricted-auth-pass').focus(),100);
+};
+
+window.closeRestrictedAuth=()=>{
+  document.getElementById('restricted-auth-modal').classList.remove('on');
+  restrictedModalAction=null;
+};
+
+window.confirmRestrictedAuth=async()=>{
+  const pass=document.getElementById('restricted-auth-pass').value;
+  const err=document.getElementById('restricted-auth-err');
+  err.textContent='';
+  if(!pass){err.textContent='Digite sua senha';return;}
+  if(!restrictedModalAction)return;
+
+  try{
+    // Reautenticação real contra o Firebase Auth — a senha é validada no
+    // servidor do Firebase, nunca comparada localmente no código.
+    const credential=EmailAuthProvider.credential(currentUser.email,pass);
+    await reauthenticateWithCredential(fbAuth.currentUser,credential);
+
+    const action=restrictedModalAction;
+    document.getElementById('restricted-auth-modal').classList.remove('on');
+    restrictedModalAction=null;
+
+    if(action.type==='enable'){
+      await update(ref(fbDb,`users/${currentUser.uid}`),{restricted:true});
+      currentUser.restricted=true;
+      restrictedMode=true;
+      document.getElementById('p-restricted-check').checked=true;
+      document.getElementById('p-restricted-manage').style.display='';
+      showNotif(currentUser,'Lista restrita ativada','Agora só e-mails cadastrados poderão se comunicar com esta conta 🔒');
+    }else if(action.type==='disable'){
+      await update(ref(fbDb,`users/${currentUser.uid}`),{restricted:false});
+      currentUser.restricted=false;
+      restrictedMode=false;
+      document.getElementById('p-restricted-check').checked=false;
+      document.getElementById('p-restricted-manage').style.display='none';
+      renderSidebarList();
+      showNotif(currentUser,'Lista restrita desativada','A conta voltou a se comunicar normalmente');
+    }else if(action.type==='add'){
+      await applyAddRestrictedEmail(action.email);
+    }else if(action.type==='remove'){
+      await applyRemoveRestrictedUid(action.uid);
+    }
+  }catch(e){
+    if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'){
+      err.textContent='❌ Senha incorreta';
+    }else{
+      err.textContent='❌ '+(e.message||'Erro ao validar senha');
+    }
+  }
+};
+
+window.openManageRestricted=()=>{
+  document.getElementById('restricted-new-email').value='';
+  document.getElementById('restricted-manage-err').textContent='';
+  renderRestrictedEmailsList();
+  document.getElementById('manage-restricted-modal').classList.add('on');
+};
+window.closeManageRestricted=()=>document.getElementById('manage-restricted-modal').classList.remove('on');
+
+function renderRestrictedEmailsList(){
+  const el=document.getElementById('restricted-emails-list');
+  const uids=Object.keys(allowedUids);
+  if(!uids.length){
+    el.innerHTML='<div style="color:var(--text2);font-size:13px;text-align:center;padding:10px">Nenhum e-mail cadastrado ainda</div>';
+    return;
+  }
+  el.innerHTML=uids.map(uid=>`
+    <div class="restricted-email-item">
+      <span>${esc(allowedUids[uid])}</span>
+      <button class="ic-btn" onclick="removeRestrictedEmail('${uid}')" title="Remover">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+window.addRestrictedEmail=()=>{
+  const email=document.getElementById('restricted-new-email').value.trim().toLowerCase();
+  const err=document.getElementById('restricted-manage-err');
+  err.textContent='';
+  if(!email||!email.includes('@')){err.textContent='Digite um e-mail válido';return;}
+
+  restrictedModalAction={type:'add',email};
+  document.getElementById('restricted-auth-desc').textContent='Por segurança, digite sua senha para adicionar este e-mail à lista permitida.';
+  document.getElementById('restricted-auth-pass').value='';
+  document.getElementById('restricted-auth-err').textContent='';
+  document.getElementById('restricted-auth-modal').classList.add('on');
+  setTimeout(()=>document.getElementById('restricted-auth-pass').focus(),100);
+};
+
+window.removeRestrictedEmail=(uid)=>{
+  restrictedModalAction={type:'remove',uid};
+  document.getElementById('restricted-auth-desc').textContent='Por segurança, digite sua senha para remover este e-mail da lista permitida.';
+  document.getElementById('restricted-auth-pass').value='';
+  document.getElementById('restricted-auth-err').textContent='';
+  document.getElementById('restricted-auth-modal').classList.add('on');
+  setTimeout(()=>document.getElementById('restricted-auth-pass').focus(),100);
+};
+
+async function applyAddRestrictedEmail(email){
+  const err=document.getElementById('restricted-manage-err');
+  try{
+    const idxSnap=await get(ref(fbDb,`email_index/${email.replace(/\./g,',')}`));
+    if(!idxSnap.exists()){
+      err.textContent='Nenhum usuário cadastrado com esse e-mail';
+      document.getElementById('manage-restricted-modal').classList.add('on');
+      return;
+    }
+    const uid=idxSnap.val();
+    await set(ref(fbDb,`users/${currentUser.uid}/allowedUids/${uid}`),email);
+    allowedUids[uid]=email;
+    renderRestrictedEmailsList();
+    renderSidebarList();
+    document.getElementById('restricted-new-email').value='';
+    document.getElementById('manage-restricted-modal').classList.add('on');
+  }catch(e){
+    err.textContent='❌ '+(e.message||'Erro ao adicionar e-mail');
+    document.getElementById('manage-restricted-modal').classList.add('on');
+  }
+}
+
+async function applyRemoveRestrictedUid(uid){
+  try{
+    await remove(ref(fbDb,`users/${currentUser.uid}/allowedUids/${uid}`));
+    delete allowedUids[uid];
+    renderRestrictedEmailsList();
+    renderSidebarList();
+    document.getElementById('manage-restricted-modal').classList.add('on');
+  }catch(e){
+    document.getElementById('restricted-manage-err').textContent='❌ '+(e.message||'Erro ao remover e-mail');
+    document.getElementById('manage-restricted-modal').classList.add('on');
+  }
+}
+
+function loadRestrictedSettings(){
+  const rRef=ref(fbDb,`users/${currentUser.uid}`);
+  onValue(ref(fbDb,`users/${currentUser.uid}/restricted`),(snap)=>{
+    restrictedMode=!!snap.val();
+    currentUser.restricted=restrictedMode;
+    renderSidebarList();
+  });
+  onValue(ref(fbDb,`users/${currentUser.uid}/allowedUids`),(snap)=>{
+    allowedUids=snap.val()||{};
+    renderSidebarList();
+  });
+}
+
+// Verifica se é permitido interagir com determinado uid, considerando o modo
+// restrito. Quando restrictedMode é falso, todo mundo é permitido normalmente.
+function isUidAllowed(uid){
+  if(!restrictedMode)return true;
+  if(uid===currentUser.uid)return true;
+  return !!allowedUids[uid];
+}
+
+
 // =========================================================
 function buildGroupEmojiGrid(){
   const g=document.getElementById('g-emoji-grid');
@@ -1085,6 +1334,7 @@ function showApp(){
   buildEP();
   loadContacts();
   loadGroups();
+  loadRestrictedSettings();
   listenContactRequests();
   listenGroupInvites();
   listenNotifications();
@@ -1195,14 +1445,27 @@ function renderSidebarList(){
   el.innerHTML='';
   const contactEntries=Object.keys(contacts).map(uid=>({uid,data:contacts[uid],type:'contact'}));
   const groupEntries=Object.keys(groups).map(gid=>({uid:gid,data:groups[gid],type:'group'}));
-  const all=[...contactEntries,...groupEntries];
+
+  // Quando modo restrito está ativo, filtra grupos mostrando só aqueles onde
+  // TODOS os membros estão na lista permitida (ou é o próprio usuário)
+  const all=[...contactEntries,...groupEntries].filter(({uid,data,type})=>{
+    if(type==='contact') return isUidAllowed(uid);
+    if(type==='group'){
+      // Grupo é permitido se todos os outros membros são permitidos
+      const members=Object.keys(data.members||{}).filter(m=>m!==currentUser.uid);
+      return members.every(m=>isUidAllowed(m));
+    }
+    return true;
+  });
 
   if(!all.length){
-    el.innerHTML='<div style="padding:40px 20px;text-align:center;color:var(--text2);font-size:14px;line-height:1.7">Adicione familiares pelo e-mail ou crie um grupo para começar 💚</div>';
+    el.innerHTML=restrictedMode
+      ?'<div style="padding:40px 20px;text-align:center;color:var(--text2);font-size:14px;line-height:1.7">🔒 Lista restrita ativa<br><br>Adicione e-mails permitidos nas configurações de perfil para ver conversas aqui</div>'
+      :'<div style="padding:40px 20px;text-align:center;color:var(--text2);font-size:14px;line-height:1.7">Adicione familiares pelo e-mail ou crie um grupo para começar 💚</div>';
     return;
   }
 
-  // Ordena por lastTime desc (sem lastTime vai para o final, ordem estável)
+  // Ordena por lastTimestamp desc
   all.sort((a,b)=>{
     const ta=a.data.lastTimestamp||0, tb=b.data.lastTimestamp||0;
     return tb-ta;
@@ -1310,6 +1573,10 @@ function listenContactRequests(){
 function chatId(a,b){return [a,b].sort().join('_');}
 
 function openChat(uid,c){
+  if(!isUidAllowed(uid)){
+    showNotif({emoji:'🔒',color:'#EF4444'},'Acesso bloqueado','Esta conta está com lista restrita ativa. Este familiar não está na lista de e-mails permitidos.');
+    return;
+  }
   currentChatType='contact';
   currentContact={uid,...c};
   document.querySelectorAll('.ci').forEach(el=>el.classList.toggle('act',el.dataset.uid===uid));
@@ -1328,6 +1595,12 @@ function openChat(uid,c){
 }
 
 function openGroupChat(gid,g){
+  // Verifica se todos os membros do grupo estão na lista permitida
+  const members=Object.keys(g.members||{}).filter(m=>m!==currentUser.uid);
+  if(members.some(m=>!isUidAllowed(m))){
+    showNotif({emoji:'🔒',color:'#EF4444'},'Acesso bloqueado','Este grupo contém membros fora da lista de e-mails permitidos.');
+    return;
+  }
   currentChatType='group';
   currentContact={uid:gid,...g};
   document.querySelectorAll('.ci').forEach(el=>el.classList.toggle('act',el.dataset.uid===gid));
@@ -1381,13 +1654,31 @@ function renderMsg(msg){
   const container=document.getElementById('msgs');
   const isSent=msg.sid===currentUser?.uid;
   const div=document.createElement('div');
-  const isEmoji=/^[\p{Emoji}\s]{1,3}$/u.test(msg.text);
+  const hasFile=!!msg.fileData;
+  const isImage=hasFile&&msg.fileType&&msg.fileType.startsWith('image/');
+  const isEmoji=!hasFile&&/^[\p{Emoji}\s]{1,3}$/u.test(msg.text||'');
   div.className=`msg ${isSent?'sent':'recv'}${isEmoji?' msg-emoji':''}`;
   const t=new Date(msg.ts||Date.now());
   const time=`${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
+
+  let attachmentHTML='';
+  if(isImage){
+    attachmentHTML=`<img src="${msg.fileData}" class="msg-image" onclick="window.open(this.src,'_blank')" alt="${esc(msg.fileName||'imagem')}">`;
+  }else if(hasFile){
+    attachmentHTML=`
+      <a class="msg-file" href="${msg.fileData}" download="${esc(msg.fileName||'arquivo')}">
+        <div class="msg-file-icon">📄</div>
+        <div>
+          <div class="msg-file-name">${esc(msg.fileName||'Arquivo')}</div>
+          <div class="msg-file-size">${formatFileSize(msg.fileSize||0)}</div>
+        </div>
+      </a>`;
+  }
+
   div.innerHTML=`
     ${!isSent?`<div class="msg-sender">${msg.sname||''}</div>`:''}
-    <div class="msg-text">${esc(msg.text)}</div>
+    ${attachmentHTML}
+    ${msg.text?`<div class="msg-text">${esc(msg.text)}</div>`:''}
     <div class="msg-meta">
       <span class="msg-time">${time}</span>
       ${isSent?'<span class="msg-check">✓✓</span>':''}
@@ -1398,12 +1689,78 @@ function renderMsg(msg){
 function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function scrollBottom(){const c=document.getElementById('msgs');setTimeout(()=>c.scrollTop=c.scrollHeight,50);}
 
+// =========================================================
+// ANEXOS DE ARQUIVO / IMAGEM
+// =========================================================
+let pendingFile=null; // {name, size, type, dataUrl}
+const MAX_FILE_SIZE=2*1024*1024; // 2MB — limite seguro para Realtime Database em Base64
+
+window.handleFileSelect=(e)=>{
+  const file=e.target.files[0];
+  e.target.value=''; // permite selecionar o mesmo arquivo de novo depois
+  if(!file)return;
+  if(file.size>MAX_FILE_SIZE){
+    showNotif({emoji:'⚠️',color:'#EF4444'},'Arquivo muito grande','O limite é de 2MB por arquivo.');
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    pendingFile={name:file.name,size:file.size,type:file.type,dataUrl:ev.target.result};
+    showFilePreview();
+  };
+  reader.readAsDataURL(file);
+};
+
+function formatFileSize(bytes){
+  if(bytes<1024)return bytes+' B';
+  if(bytes<1024*1024)return (bytes/1024).toFixed(1)+' KB';
+  return (bytes/(1024*1024)).toFixed(1)+' MB';
+}
+
+function showFilePreview(){
+  const bar=document.getElementById('file-preview-bar');
+  const thumb=document.getElementById('file-preview-thumb');
+  const isImage=pendingFile.type.startsWith('image/');
+  thumb.innerHTML=isImage?`<img src="${pendingFile.dataUrl}">`:'📄';
+  document.getElementById('file-preview-name').textContent=pendingFile.name;
+  document.getElementById('file-preview-size').textContent=formatFileSize(pendingFile.size);
+  bar.style.display='flex';
+}
+
+window.cancelFileAttachment=()=>{
+  pendingFile=null;
+  document.getElementById('file-preview-bar').style.display='none';
+};
+
 window.sendMsg=async()=>{
   const inp=document.getElementById('msg-inp');
   const text=inp.value.trim();
-  if(!text||!currentContact)return;
+  if(!text&&!pendingFile)return;
+  if(!currentContact)return;
+  // Guard de lista restrita: bloqueia envio de mensagem para contatos não permitidos
+  if(currentChatType==='contact'&&!isUidAllowed(currentContact.uid)){
+    showNotif({emoji:'🔒',color:'#EF4444'},'Bloqueado','Lista restrita ativa: este contato não está na lista permitida.');
+    return;
+  }
+  if(currentChatType==='group'){
+    const members=Object.keys(currentContact.members||{}).filter(m=>m!==currentUser.uid);
+    if(members.some(m=>!isUidAllowed(m))){
+      showNotif({emoji:'🔒',color:'#EF4444'},'Bloqueado','Lista restrita ativa: este grupo tem membros fora da lista permitida.');
+      return;
+    }
+  }
   inp.value='';
-  const msg={text,sid:currentUser.uid,sname:currentUser.displayName,ts:Date.now()};
+
+  const msg={
+    text,sid:currentUser.uid,sname:currentUser.displayName,ts:Date.now(),
+    fileName:pendingFile?.name||null,
+    fileType:pendingFile?.type||null,
+    fileSize:pendingFile?.size||null,
+    fileData:pendingFile?.dataUrl||null
+  };
+  const previewLabel=pendingFile?(text?text:`📎 ${pendingFile.name}`):text;
+  window.cancelFileAttachment();
+
   const t=new Date();const time=`${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
 
   if(currentChatType==='group'){
@@ -1411,12 +1768,12 @@ window.sendMsg=async()=>{
     await push(ref(fbDb,`messages/group_${gid}`),{...msg,ts:serverTimestamp()});
     // Atualiza a prévia do grupo para todos os membros, e notifica cada um (exceto quem enviou)
     const members=Object.keys(currentContact.members||{});
-    await update(ref(fbDb,`groups/${gid}`),{lastMsg:`${currentUser.displayName}: ${text}`,lastTime:time,lastTimestamp:Date.now()});
+    await update(ref(fbDb,`groups/${gid}`),{lastMsg:`${currentUser.displayName}: ${previewLabel}`,lastTime:time,lastTimestamp:Date.now()});
     await Promise.all(members.filter(m=>m!==currentUser.uid).map(m=>
       set(ref(fbDb,`notifications/${m}/group_${gid}`),{
         name:`${currentContact.name} (grupo)`,emoji:currentContact.emoji||'👨‍👩‍👧‍👦',
         color:currentContact.color||'#7B61FF',photoData:currentContact.photoData||null,
-        text:`${currentUser.displayName}: ${text}`,ts:Date.now()
+        text:`${currentUser.displayName}: ${previewLabel}`,ts:Date.now()
       })
     ));
     return;
@@ -1425,11 +1782,11 @@ window.sendMsg=async()=>{
   const cid=chatId(currentUser.uid,currentContact.uid);
   await push(ref(fbDb,`messages/${cid}`),{...msg,ts:serverTimestamp()});
   // Atualizar última mensagem
-  await update(ref(fbDb,`users/${currentUser.uid}/contacts/${currentContact.uid}`),{lastMsg:text,lastTime:time,lastTimestamp:Date.now()});
+  await update(ref(fbDb,`users/${currentUser.uid}/contacts/${currentContact.uid}`),{lastMsg:previewLabel,lastTime:time,lastTimestamp:Date.now()});
   // Notificar outro usuário
   await set(ref(fbDb,`notifications/${currentContact.uid}/${currentUser.uid}`),{
     name:currentUser.displayName,emoji:currentUser.emoji,color:currentUser.color,
-    photoData:currentUser.photoData||null,text,ts:Date.now()
+    photoData:currentUser.photoData||null,text:previewLabel,ts:Date.now()
   });
 };
 
@@ -1673,6 +2030,11 @@ async function cleanupSignaling(otherUid){
 
 window.startCall=async(callType)=>{
   if(!currentContact)return;
+  // Guard de lista restrita: bloqueia chamadas para contatos não permitidos
+  if(!isUidAllowed(currentContact.uid)){
+    showNotif({emoji:'🔒',color:'#EF4444'},'Bloqueado','Lista restrita ativa: este contato não está na lista permitida.');
+    return;
+  }
   callType=callType||'video';
   isAudioCall=callType==='audio';
   callPartnerId=currentContact.uid;
@@ -1745,6 +2107,8 @@ window.endCall=async(remoteInitiated)=>{
   isCaller=false;
   isAudioCall=false;
   camOff=false;
+  speakerOn=false;
+  document.getElementById('b-speaker').classList.remove('c-on');
   muted=false;
   document.getElementById('b-mute').classList.remove('c-on');
   document.getElementById('b-cam').classList.remove('c-on');
@@ -1759,6 +2123,32 @@ window.toggleCam=()=>{
   camOff=!camOff;
   if(localStream)localStream.getVideoTracks().forEach(t=>t.enabled=!camOff);
   document.getElementById('b-cam').classList.toggle('c-on',camOff);
+};
+
+let speakerOn=false;
+window.toggleSpeaker=async()=>{
+  const rv=document.getElementById('remoteVideo');
+  // setSinkId só é suportado em desktop (Chrome/Edge/Firefox). Navegadores
+  // móveis (Chrome Android, Safari iOS) não expõem essa troca via JavaScript —
+  // nesses casos o próprio sistema decide a saída de áudio automaticamente.
+  if(typeof rv.setSinkId!=='function'){
+    showNotif({emoji:'🔊',color:'#374151'},'Viva-voz','Esse navegador não permite alternar a saída de áudio. Use os controles de volume do aparelho.');
+    return;
+  }
+  try{
+    if(!speakerOn){
+      const devices=await navigator.mediaDevices.enumerateDevices();
+      const speaker=devices.find(d=>d.kind==='audiooutput'&&/speaker|alto.?falante/i.test(d.label));
+      await rv.setSinkId(speaker?speaker.deviceId:'');
+      speakerOn=true;
+    }else{
+      await rv.setSinkId('');
+      speakerOn=false;
+    }
+    document.getElementById('b-speaker').classList.toggle('c-on',speakerOn);
+  }catch(e){
+    showNotif({emoji:'🔊',color:'#374151'},'Viva-voz','Não foi possível alternar a saída de áudio neste dispositivo.');
+  }
 };
 
 function startTimer(){
@@ -1778,9 +2168,14 @@ function listenCalls(){
   const cRef=ref(fbDb,`calls/${currentUser.uid}`);
   onValue(cRef,async(snap)=>{
     if(!snap.exists())return;
-    // Se já está em uma chamada, ignora novo convite (evita conflito de estado)
     if(document.getElementById('vc').classList.contains('on'))return;
     const d=snap.val();
+    // Lista restrita: rejeita automaticamente chamadas de UIDs não permitidos
+    if(!isUidAllowed(d.from)){
+      await remove(ref(fbDb,`calls/${currentUser.uid}`));
+      try{ await set(ref(fbDb,`call_hangup/${chatId(currentUser.uid,d.from)}/${currentUser.uid}`),true); }catch(e){}
+      return;
+    }
     const inc=document.getElementById('inc');
     const incAv=document.getElementById('inc-av');
     const callType=d.callType||'video';
