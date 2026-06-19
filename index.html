@@ -93,6 +93,19 @@ video { display:block; max-width:100%; max-height:100%; }
 .modal-ov-top { z-index:1100; }
 .modal-ov.on { display:flex; }
 .modal { background:var(--bg-sidebar);border-radius:14px;padding:28px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px;position:relative; }
+.profile-view-modal { padding:0 0 24px; align-items:stretch; }
+.profile-view-header { display:flex;flex-direction:column;align-items:center;gap:8px;padding:36px 24px 24px;background:var(--bg-chat); }
+.profile-view-av { width:96px;height:96px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:44px;background:#555; }
+.profile-view-av img { width:100%;height:100%;object-fit:cover; }
+.profile-view-name { font-size:19px;font-weight:600;color:var(--text); }
+.profile-view-email { font-size:13px;color:var(--text2); }
+.profile-menu-group { display:flex;flex-direction:column;padding:8px 0 0; }
+.profile-menu-item { display:flex;align-items:center;gap:14px;padding:14px 24px;cursor:pointer;transition:background .15s; }
+.profile-menu-item:hover { background:var(--hover); }
+.profile-menu-icon { font-size:20px;width:24px;text-align:center;flex-shrink:0; }
+.profile-menu-label { flex:1;font-size:15px;color:var(--text); }
+.profile-menu-arrow { font-size:20px;color:var(--text2); }
+.submenu-header { display:flex;align-items:center;gap:10px;margin:-4px -4px 4px; }
 .modal h3 { font-size:17px;font-weight:500; }
 .modal-x { position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1; }
 
@@ -134,6 +147,18 @@ video { display:block; max-width:100%; max-height:100%; }
 .emoji-btn,.att-btn { background:none;border:none;color:var(--text2);cursor:pointer;font-size:22px;padding:6px;border-radius:50%;transition:all .2s;display:flex;align-items:center;justify-content:center; }
 .emoji-btn:hover,.att-btn:hover { color:var(--text);background:var(--hover); }
 .file-preview-bar { display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg-input);border-top:1px solid var(--border); }
+.mic-btn { touch-action:none;user-select:none; }
+.mic-btn.recording { background:#EF4444 !important;transform:scale(1.1); }
+.voice-rec-bar { display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-input);border-top:1px solid var(--border); }
+.voice-rec-dot { width:10px;height:10px;border-radius:50%;background:#EF4444;animation:pulse-rec 1s infinite; }
+@keyframes pulse-rec { 0%,100%{opacity:1} 50%{opacity:.3} }
+.voice-rec-time { font-size:14px;color:var(--text);font-variant-numeric:tabular-nums; }
+.voice-rec-hint { font-size:12px;color:var(--text2);flex:1;text-align:right; }
+.msg-audio { display:flex;align-items:center;gap:10px;min-width:200px; }
+.msg-audio-btn { width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0; }
+.msg-audio-progress { flex:1;height:3px;background:rgba(255,255,255,.2);border-radius:2px;position:relative;cursor:pointer; }
+.msg-audio-progress-fill { height:100%;background:currentColor;border-radius:2px;width:0%; }
+.msg-audio-duration { font-size:11px;opacity:.8;flex-shrink:0; }
 .file-preview-thumb { width:40px;height:40px;border-radius:8px;background:var(--bg-sidebar);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0; }
 .file-preview-thumb img { width:100%;height:100%;object-fit:cover; }
 .file-preview-info { flex:1;min-width:0; }
@@ -360,7 +385,7 @@ video { display:block; max-width:100%; max-height:100%; }
       </div>
       <div id="msgs"></div>
       <div class="typing" id="typing-ind"></div>
-      <div class="chat-inp">
+      <div class="chat-inp" id="chat-inp">
         <div class="ep" id="ep"></div>
         <input type="file" id="file-input" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none" onchange="handleFileSelect(event)">
         <button class="att-btn" onclick="document.getElementById('file-input').click()" title="Anexar arquivo">
@@ -370,11 +395,21 @@ video { display:block; max-width:100%; max-height:100%; }
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
         </button>
         <div class="inp-wrap">
-          <input id="msg-inp" placeholder="Digite uma mensagem" onkeydown="if(event.key==='Enter')sendMsg()" oninput="onTyping()">
+          <input id="msg-inp" placeholder="Digite uma mensagem" onkeydown="if(event.key==='Enter')sendMsg()" oninput="onTyping();toggleSendOrMic()">
         </div>
-        <button class="send-btn" onclick="sendMsg()">
+        <button class="send-btn" id="send-btn" onclick="sendMsg()" style="display:none">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
+        <button class="send-btn mic-btn" id="mic-btn"
+          onmousedown="startVoiceRecording()" onmouseup="stopVoiceRecording()" onmouseleave="cancelVoiceRecordingIfActive()"
+          ontouchstart="startVoiceRecording(event)" ontouchend="stopVoiceRecording(event)" title="Segure para gravar áudio">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93H2c0 4.42 3.39 8.07 7.78 8.72L10 17.93V21h4v-3.07l.22.01C18.61 17.07 22 13.42 22 9h-2c0 4.08-3.06 7.44-7 7.93V16h-2v-.07z"/></svg>
+        </button>
+      </div>
+      <div class="voice-rec-bar" id="voice-rec-bar" style="display:none">
+        <div class="voice-rec-dot"></div>
+        <div class="voice-rec-time" id="voice-rec-time">0:00</div>
+        <div class="voice-rec-hint">Solte para enviar · arraste para cima para cancelar</div>
       </div>
       <div class="file-preview-bar" id="file-preview-bar" style="display:none">
         <div class="file-preview-thumb" id="file-preview-thumb"></div>
@@ -404,9 +439,38 @@ video { display:block; max-width:100%; max-height:100%; }
 
 <!-- MODAL EDITAR PERFIL -->
 <div class="modal-ov" id="profile-modal">
-  <div class="modal">
+  <div class="modal profile-view-modal">
     <button class="modal-x" onclick="closeProfile()">✕</button>
-    <h3>👤 Editar perfil</h3>
+    <div class="profile-view-header">
+      <div class="profile-view-av" id="pv-av-wrap"></div>
+      <div class="profile-view-name" id="pv-name"></div>
+      <div class="profile-view-email" id="pv-email"></div>
+    </div>
+    <div class="profile-menu-group">
+      <div class="profile-menu-item" onclick="openAccountScreen()">
+        <div class="profile-menu-icon">🔑</div>
+        <div class="profile-menu-label">Conta</div>
+        <div class="profile-menu-arrow">›</div>
+      </div>
+      <div class="profile-menu-item" onclick="openPrivacyScreen()">
+        <div class="profile-menu-icon">🔒</div>
+        <div class="profile-menu-label">Privacidade</div>
+        <div class="profile-menu-arrow">›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TELA: CONTA (editar nome, foto/emoji) -->
+<div class="modal-ov" id="account-modal">
+  <div class="modal">
+    <div class="submenu-header">
+      <button class="ic-btn" onclick="closeAccountScreen()" title="Voltar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <h3 style="margin:0">🔑 Conta</h3>
+    </div>
+    <div class="avatar-label" style="margin-top:6px">Editar nome e foto</div>
     <input class="inp" id="p-name" type="text" placeholder="Seu nome">
     <div class="avatar-section">
       <div class="avatar-label">Foto de perfil</div>
@@ -429,11 +493,46 @@ video { display:block; max-width:100%; max-height:100%; }
       </div>
     </div>
     <div class="err" id="profile-err"></div>
-    <div class="restricted-section">
+    <button class="btn-primary" onclick="saveProfile()">Salvar alterações</button>
+  </div>
+</div>
+
+<!-- TELA: PRIVACIDADE -->
+<div class="modal-ov" id="privacy-modal">
+  <div class="modal">
+    <div class="submenu-header">
+      <button class="ic-btn" onclick="closePrivacyScreen()" title="Voltar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <h3 style="margin:0">🔒 Privacidade</h3>
+    </div>
+    <div class="profile-menu-group" style="margin-top:6px">
+      <div class="profile-menu-item" onclick="openRestrictedFromPrivacy()">
+        <div class="profile-menu-icon">🔒</div>
+        <div style="flex:1">
+          <div class="profile-menu-label">Lista restrita</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">Conversar, ligar e ver grupos apenas com e-mails cadastrados</div>
+        </div>
+        <div class="profile-menu-arrow">›</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TELA: LISTA RESTRITA (toggle + acesso ao gerenciamento) -->
+<div class="modal-ov" id="restricted-toggle-modal">
+  <div class="modal">
+    <div class="submenu-header">
+      <button class="ic-btn" onclick="closeRestrictedToggleScreen()" title="Voltar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      </button>
+      <h3 style="margin:0">🔒 Lista restrita</h3>
+    </div>
+    <div class="restricted-section" style="border-top:none;padding-top:6px">
       <label class="restricted-toggle">
         <input type="checkbox" id="p-restricted-check" onchange="onRestrictedToggle(this.checked)">
         <div>
-          <div style="font-weight:600;font-size:14px">🔒 Lista restrita</div>
+          <div style="font-weight:600;font-size:14px">Ativar lista restrita</div>
           <div style="font-size:12px;color:var(--text2);margin-top:2px">Permite conversar, ligar e ver grupos apenas com e-mails cadastrados nesta lista. Indicado para contas de crianças/adolescentes.</div>
         </div>
       </label>
@@ -441,7 +540,6 @@ video { display:block; max-width:100%; max-height:100%; }
         <button class="avatar-method-btn" style="width:100%;margin-top:8px;padding:10px" onclick="openManageRestricted()">Gerenciar e-mails permitidos</button>
       </div>
     </div>
-    <button class="btn-primary" onclick="saveProfile()">Salvar alterações</button>
   </div>
 </div>
 
@@ -688,6 +786,29 @@ window.previewProfilePhoto=(e)=>{
 
 window.showProfile=()=>{
   if(!currentUser)return;
+  renderProfileViewAvatar();
+  document.getElementById('pv-name').textContent=currentUser.displayName||'';
+  document.getElementById('pv-email').textContent=currentUser.email||'';
+  document.getElementById('profile-modal').classList.add('on');
+};
+
+window.closeProfile=()=>document.getElementById('profile-modal').classList.remove('on');
+
+function renderProfileViewAvatar(){
+  const av=document.getElementById('pv-av-wrap');
+  av.innerHTML='';
+  if(currentUser.photoData){
+    const img=document.createElement('img');img.src=currentUser.photoData;
+    av.appendChild(img);
+    av.style.background='transparent';
+  }else{
+    av.textContent=currentUser.emoji||'🦁';
+    av.style.background=currentUser.color||'#FFA500';
+  }
+}
+
+// --- TELA: CONTA (editar nome/foto) ---
+window.openAccountScreen=()=>{
   buildProfileEmojiGrid();
   document.getElementById('p-name').value=currentUser.displayName||'';
   document.getElementById('profile-err').textContent='';
@@ -714,13 +835,23 @@ window.showProfile=()=>{
     },0);
   }
 
+  document.getElementById('account-modal').classList.add('on');
+};
+window.closeAccountScreen=()=>document.getElementById('account-modal').classList.remove('on');
+
+// --- TELA: PRIVACIDADE ---
+window.openPrivacyScreen=()=>document.getElementById('privacy-modal').classList.add('on');
+window.closePrivacyScreen=()=>document.getElementById('privacy-modal').classList.remove('on');
+
+// --- TELA: LISTA RESTRITA (toggle) ---
+window.openRestrictedFromPrivacy=()=>{
   document.getElementById('p-restricted-check').checked=!!currentUser.restricted;
   document.getElementById('p-restricted-manage').style.display=currentUser.restricted?'':'none';
-
-  document.getElementById('profile-modal').classList.add('on');
+  document.getElementById('restricted-toggle-modal').classList.add('on');
 };
+window.closeRestrictedToggleScreen=()=>document.getElementById('restricted-toggle-modal').classList.remove('on');
 
-window.closeProfile=()=>document.getElementById('profile-modal').classList.remove('on');
+
 
 window.saveProfile=async()=>{
   const name=document.getElementById('p-name').value.trim();
@@ -742,7 +873,9 @@ window.saveProfile=async()=>{
     currentUser={...currentUser,...updates};
     document.getElementById('my-name').textContent=currentUser.displayName;
     renderMyAvatar(document.getElementById('my-av-wrap'));
-    closeProfile();
+    closeAccountScreen();
+    renderProfileViewAvatar();
+    document.getElementById('pv-name').textContent=currentUser.displayName||'';
     showNotif(currentUser,'Perfil atualizado','As alterações foram salvas ✅');
   }catch(e){
     err.textContent='❌ '+(e.message||'Erro ao salvar perfil');
@@ -1660,14 +1793,28 @@ function renderMsg(msg){
   const isSent=msg.sid===currentUser?.uid;
   const div=document.createElement('div');
   const hasFile=!!msg.fileData;
+  const hasAudio=!!msg.audioData;
   const isImage=hasFile&&msg.fileType&&msg.fileType.startsWith('image/');
-  const isEmoji=!hasFile&&/^[\p{Emoji}\s]{1,3}$/u.test(msg.text||'');
+  const isEmoji=!hasFile&&!hasAudio&&/^[\p{Emoji}\s]{1,3}$/u.test(msg.text||'');
   div.className=`msg ${isSent?'sent':'recv'}${isEmoji?' msg-emoji':''}`;
   const t=new Date(msg.ts||Date.now());
   const time=`${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
 
   let attachmentHTML='';
-  if(isImage){
+  if(hasAudio){
+    const dur=msg.audioDuration||0;
+    const durLabel=`${Math.floor(dur/60)}:${(dur%60).toString().padStart(2,'0')}`;
+    const audioId='audio-'+Math.random().toString(36).slice(2,9);
+    attachmentHTML=`
+      <div class="msg-audio">
+        <audio id="${audioId}" src="${msg.audioData}" preload="metadata" style="display:none" ontimeupdate="updateAudioProgress('${audioId}')" onended="resetAudioPlayBtn('${audioId}')"></audio>
+        <button class="msg-audio-btn" id="${audioId}-btn" onclick="toggleAudioPlay('${audioId}')">▶️</button>
+        <div class="msg-audio-progress" onclick="seekAudio(event,'${audioId}')">
+          <div class="msg-audio-progress-fill" id="${audioId}-fill"></div>
+        </div>
+        <div class="msg-audio-duration" id="${audioId}-dur">${durLabel}</div>
+      </div>`;
+  }else if(isImage){
     attachmentHTML=`<img src="${msg.fileData}" class="msg-image" onclick="window.open(this.src,'_blank')" alt="${esc(msg.fileName||'imagem')}">`;
   }else if(hasFile){
     attachmentHTML=`
@@ -1693,6 +1840,50 @@ function renderMsg(msg){
 
 function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function scrollBottom(){const c=document.getElementById('msgs');setTimeout(()=>c.scrollTop=c.scrollHeight,50);}
+
+// Player de áudio simples embutido nas mensagens. Pausa qualquer outro áudio
+// em reprodução antes de tocar um novo, para nunca tocar dois ao mesmo tempo.
+window.toggleAudioPlay=(audioId)=>{
+  const audio=document.getElementById(audioId);
+  const btn=document.getElementById(audioId+'-btn');
+  if(!audio)return;
+  if(!audio.paused){
+    audio.pause();
+    btn.textContent='▶️';
+    return;
+  }
+  document.querySelectorAll('#msgs audio').forEach(a=>{
+    if(a!==audio&&!a.paused){
+      a.pause();
+      const otherBtn=document.getElementById(a.id+'-btn');
+      if(otherBtn)otherBtn.textContent='▶️';
+    }
+  });
+  audio.play();
+  btn.textContent='⏸️';
+};
+
+window.updateAudioProgress=(audioId)=>{
+  const audio=document.getElementById(audioId);
+  const fill=document.getElementById(audioId+'-fill');
+  if(!audio||!fill||!audio.duration)return;
+  fill.style.width=(audio.currentTime/audio.duration*100)+'%';
+};
+
+window.resetAudioPlayBtn=(audioId)=>{
+  const btn=document.getElementById(audioId+'-btn');
+  const fill=document.getElementById(audioId+'-fill');
+  if(btn)btn.textContent='▶️';
+  if(fill)fill.style.width='0%';
+};
+
+window.seekAudio=(e,audioId)=>{
+  const audio=document.getElementById(audioId);
+  if(!audio||!audio.duration)return;
+  const rect=e.currentTarget.getBoundingClientRect();
+  const ratio=(e.clientX-rect.left)/rect.width;
+  audio.currentTime=ratio*audio.duration;
+};
 
 // =========================================================
 // ANEXOS DE ARQUIVO / IMAGEM
@@ -1736,6 +1927,153 @@ window.cancelFileAttachment=()=>{
   pendingFile=null;
   document.getElementById('file-preview-bar').style.display='none';
 };
+
+// Alterna entre botão "enviar" (texto digitado) e botão "microfone" (campo vazio),
+// no mesmo padrão visual do WhatsApp.
+window.toggleSendOrMic=()=>{
+  const hasText=document.getElementById('msg-inp').value.trim().length>0;
+  document.getElementById('send-btn').style.display=(hasText||pendingFile)?'':'none';
+  document.getElementById('mic-btn').style.display=(hasText||pendingFile)?'none':'';
+};
+
+// =========================================================
+// GRAVAÇÃO DE ÁUDIO (mensagem de voz)
+// =========================================================
+let mediaRecorder=null;
+let recordedChunks=[];
+let recordingStream=null;
+let recordingStartTime=0;
+let recordingTimerInterval=null;
+let recordingCancelled=false;
+let recordingActive=false;
+const MAX_RECORDING_MS=3*60*1000; // limite de 3 minutos por mensagem de voz
+
+function pickAudioMimeType(){
+  const candidates=['audio/webm;codecs=opus','audio/ogg;codecs=opus','audio/mp4','audio/webm'];
+  return candidates.find(t=>MediaRecorder.isTypeSupported(t))||'';
+}
+
+window.startVoiceRecording=async(e)=>{
+  if(e&&e.cancelable)e.preventDefault(); // evita disparo duplicado de touch+mouse em mobile
+  if(recordingActive)return;
+  if(!currentContact)return;
+
+  try{
+    recordingStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  }catch(err){
+    showNotif({emoji:'🎤',color:'#EF4444'},'Microfone indisponível','Não foi possível acessar o microfone. Verifique as permissões do navegador.');
+    return;
+  }
+
+  recordingActive=true;
+  recordingCancelled=false;
+  recordedChunks=[];
+  const mimeType=pickAudioMimeType();
+  mediaRecorder=new MediaRecorder(recordingStream,mimeType?{mimeType}:undefined);
+
+  mediaRecorder.ondataavailable=(ev)=>{ if(ev.data.size>0)recordedChunks.push(ev.data); };
+  mediaRecorder.onstop=onVoiceRecordingStop;
+
+  mediaRecorder.start();
+  recordingStartTime=Date.now();
+  document.getElementById('mic-btn').classList.add('recording');
+  document.getElementById('voice-rec-bar').style.display='flex';
+  document.getElementById('chat-inp')?.classList.add('recording-mode');
+
+  recordingTimerInterval=setInterval(()=>{
+    const elapsed=Date.now()-recordingStartTime;
+    const s=Math.floor(elapsed/1000);
+    document.getElementById('voice-rec-time').textContent=`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+    if(elapsed>=MAX_RECORDING_MS) stopVoiceRecording();
+  },200);
+};
+
+window.stopVoiceRecording=(e)=>{
+  if(e&&e.cancelable)e.preventDefault();
+  if(!recordingActive||!mediaRecorder)return;
+  recordingActive=false;
+  if(mediaRecorder.state!=='inactive') mediaRecorder.stop();
+};
+
+// Quando o dedo/mouse sai do botão sem soltar formalmente (ex: arrastar para fora),
+// trata como cancelamento — evita enviar uma gravação acidental e incompleta.
+window.cancelVoiceRecordingIfActive=()=>{
+  if(!recordingActive)return;
+  recordingCancelled=true;
+  window.stopVoiceRecording();
+};
+
+function resetRecordingUI(){
+  clearInterval(recordingTimerInterval);
+  recordingTimerInterval=null;
+  document.getElementById('mic-btn').classList.remove('recording');
+  document.getElementById('voice-rec-bar').style.display='none';
+  document.getElementById('voice-rec-time').textContent='0:00';
+  if(recordingStream){recordingStream.getTracks().forEach(t=>t.stop());recordingStream=null;}
+}
+
+async function onVoiceRecordingStop(){
+  const durationMs=Date.now()-recordingStartTime;
+  resetRecordingUI();
+
+  // Gravações muito curtas (toque acidental) ou canceladas não são enviadas
+  if(recordingCancelled||durationMs<700||!recordedChunks.length){
+    recordedChunks=[];
+    return;
+  }
+
+  const blob=new Blob(recordedChunks,{type:mediaRecorder.mimeType||'audio/webm'});
+  recordedChunks=[];
+
+  if(blob.size>MAX_FILE_SIZE){
+    showNotif({emoji:'⚠️',color:'#EF4444'},'Áudio muito longo','O áudio gravado excedeu o limite de tamanho. Tente um áudio mais curto.');
+    return;
+  }
+
+  const reader=new FileReader();
+  reader.onload=async(ev)=>{
+    const durationSec=Math.round(durationMs/1000);
+    await sendVoiceMessage(ev.target.result,blob.type,durationSec);
+  };
+  reader.readAsDataURL(blob);
+}
+
+async function sendVoiceMessage(dataUrl,mimeType,durationSec){
+  if(!currentContact)return;
+  if(currentChatType==='contact'&&!isUidAllowed(currentContact.uid)){
+    showNotif({emoji:'🔒',color:'#EF4444'},'Bloqueado','Lista restrita ativa: este contato não está na lista permitida.');
+    return;
+  }
+  const t=new Date();const time=`${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
+  const msg={
+    text:'',sid:currentUser.uid,sname:currentUser.displayName,ts:Date.now(),
+    audioData:dataUrl,audioType:mimeType,audioDuration:durationSec
+  };
+  const previewLabel=`🎤 Mensagem de voz (${durationSec}s)`;
+
+  if(currentChatType==='group'){
+    const gid=currentContact.uid;
+    await push(ref(fbDb,`messages/group_${gid}`),{...msg,ts:serverTimestamp()});
+    const members=Object.keys(currentContact.members||{});
+    await update(ref(fbDb,`groups/${gid}`),{lastMsg:`${currentUser.displayName}: ${previewLabel}`,lastTime:time,lastTimestamp:Date.now()});
+    await Promise.all(members.filter(m=>m!==currentUser.uid).map(m=>
+      set(ref(fbDb,`notifications/${m}/group_${gid}`),{
+        name:`${currentContact.name} (grupo)`,emoji:currentContact.emoji||'👨‍👩‍👧‍👦',
+        color:currentContact.color||'#7B61FF',photoData:currentContact.photoData||null,
+        text:`${currentUser.displayName}: ${previewLabel}`,ts:Date.now()
+      })
+    ));
+    return;
+  }
+
+  const cid=chatId(currentUser.uid,currentContact.uid);
+  await push(ref(fbDb,`messages/${cid}`),{...msg,ts:serverTimestamp()});
+  await update(ref(fbDb,`users/${currentUser.uid}/contacts/${currentContact.uid}`),{lastMsg:previewLabel,lastTime:time,lastTimestamp:Date.now()});
+  await set(ref(fbDb,`notifications/${currentContact.uid}/${currentUser.uid}`),{
+    name:currentUser.displayName,emoji:currentUser.emoji,color:currentUser.color,
+    photoData:currentUser.photoData||null,text:previewLabel,ts:Date.now()
+  });
+}
 
 window.sendMsg=async()=>{
   const inp=document.getElementById('msg-inp');
