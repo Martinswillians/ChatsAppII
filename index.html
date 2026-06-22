@@ -1609,11 +1609,28 @@ function showApp(){
 // aba (ex: aberto pelo atalho instalado na área de trabalho). Só pergunta se
 // ainda não foi perguntado antes (nem concedido, nem negado).
 function requestNotificationPermission(){
-  if(!('Notification' in window))return;
-  if(Notification.permission==='default'){
-    // Pequeno atraso para não competir com a animação de entrada da tela
-    setTimeout(()=>{ Notification.requestPermission(); },1500);
+  if(!('Notification' in window)){
+    console.log('[Notif] API de Notification não disponível neste navegador.');
+    return;
   }
+  console.log('[Notif] permissão atual:',Notification.permission);
+  if(Notification.permission==='granted'){
+    console.log('[Notif] Permissão já concedida — notificações ativas.');
+    return;
+  }
+  if(Notification.permission==='denied'){
+    console.log('[Notif] Permissão negada pelo usuário — notificações desabilitadas.');
+    return;
+  }
+  // permission === 'default': ainda não foi perguntado, pede após 1.5s para
+  // não competir com a animação de entrada e dar contexto ao usuário
+  setTimeout(async()=>{
+    const result=await Notification.requestPermission();
+    console.log('[Notif] Resposta do usuário:',result);
+    if(result==='granted'){
+      showNotif({emoji:'🔔',color:'#25D366'},'Notificações ativadas!','Você receberá avisos de novas mensagens mesmo com o app em segundo plano.');
+    }
+  },1500);
 }
 
 // =========================================================
@@ -1624,7 +1641,8 @@ let contactProfileUnsubs=[];
 function loadContacts(){
   const myRef=ref(fbDb,`users/${currentUser.uid}/contacts`);
   onValue(myRef,(snap)=>{
-    const cids=Object.keys(snap.val()||{});
+    const cidMap=snap.val()||{};
+    const cids=Object.keys(cidMap);
 
     // Limpa listeners de perfis anteriores antes de criar novos
     contactProfileUnsubs.forEach(u=>u());
@@ -1632,22 +1650,38 @@ function loadContacts(){
     contacts={};
 
     cids.forEach(cid=>{
-      const uRef=ref(fbDb,`users/${cid}`);
-      const handler=onValue(uRef,(uSnap)=>{
-        if(uSnap.exists()){
-          contacts[cid]=uSnap.val();
-          renderSidebarList();
-          // Atualiza cabeçalho do chat aberto se for esse contato
-          if(currentChatType==='contact'&&currentContact&&currentContact.uid===cid){
-            const c=contacts[cid];
-            currentContact={...currentContact,...c};
-            document.getElementById('ch-status').textContent=c.online?'online':'offline';
-            document.getElementById('ch-name').textContent=c.name||'Familiar';
-            updateChatHeaderAvatar(c);
-          }
+      // Dados do contato: combina dados locais (lastMsg, unread, lastTimestamp)
+      // com o perfil público do contato (nome, foto, emoji, online)
+      let localData={}; // dados de users/{meu-uid}/contacts/{cid}
+      let profileData={}; // dados de users/{cid}
+
+      const mergeAndRender=()=>{
+        contacts[cid]={...profileData,...localData};
+        renderSidebarList();
+        if(currentChatType==='contact'&&currentContact&&currentContact.uid===cid){
+          const c=contacts[cid];
+          currentContact={...currentContact,...c};
+          document.getElementById('ch-status').textContent=c.online?'online':'offline';
+          document.getElementById('ch-name').textContent=c.name||'Familiar';
+          updateChatHeaderAvatar(c);
         }
+      };
+
+      // Listener no próprio registro do contato (lastMsg, unread, timestamps)
+      const myContactRef=ref(fbDb,`users/${currentUser.uid}/contacts/${cid}`);
+      const h1=onValue(myContactRef,(snap)=>{
+        if(snap.exists()) localData=snap.val();
+        mergeAndRender();
       });
-      contactProfileUnsubs.push(()=>off(uRef,'value',handler));
+
+      // Listener no perfil público do contato (nome, foto, online)
+      const uRef=ref(fbDb,`users/${cid}`);
+      const h2=onValue(uRef,(uSnap)=>{
+        if(uSnap.exists()) profileData=uSnap.val();
+        mergeAndRender();
+      });
+
+      contactProfileUnsubs.push(()=>{off(myContactRef,'value',h1);off(uRef,'value',h2);});
     });
 
     if(!cids.length) renderSidebarList();
@@ -1770,6 +1804,13 @@ function renderSidebarList(){
     item.onclick=()=>type==='group'?openGroupChat(uid,c):openChat(uid,c);
     el.appendChild(item);
   });
+
+  // Atualiza o título da aba/janela com o total de não lidas — visível na
+  // barra de tarefas e na aba do navegador mesmo quando o app está minimizado.
+  const totalUnread=all.reduce((sum,{data})=>sum+(data.unread||0),0);
+  document.title=totalUnread>0
+    ?`(${totalUnread}) ChatsApp - Mensagens com privacidade e segurança`
+    :'ChatsApp - Mensagens com privacidade e segurança';
 }
 
 // Mantido por compatibilidade com chamadas existentes
@@ -1865,6 +1906,12 @@ function openChat(uid,c){
   document.getElementById('ch-vid-btn').style.display='';
   document.getElementById('ch-group-info-btn').style.display='none';
   document.getElementById('typing-ind').classList.remove('on');
+  // Zera contador de não lidas ao abrir o chat
+  if(contacts[uid]?.unread){
+    contacts[uid].unread=0;
+    update(ref(fbDb,`users/${currentUser.uid}/contacts/${uid}`),{unread:0}).catch(()=>{});
+    renderSidebarList();
+  }
   loadMsgs(uid);
   listenTyping(uid);
 }
@@ -1889,6 +1936,11 @@ function openGroupChat(gid,g){
   document.getElementById('ch-vid-btn').style.display='none';
   document.getElementById('ch-group-info-btn').style.display='flex';
   document.getElementById('typing-ind').classList.remove('on');
+  // Zera contador de não lidas ao abrir o grupo
+  if(groups[gid]?.unread){
+    groups[gid].unread=0;
+    renderSidebarList();
+  }
   loadGroupMsgs(gid);
 }
 
@@ -2627,11 +2679,34 @@ function listenNotifications(){
   const nRef=ref(fbDb,`notifications/${currentUser.uid}`);
   onChildAdded(nRef,async(snap)=>{
     const d=snap.val();
-    const expectedKey=currentContact?(currentChatType==='group'?`group_${currentContact.uid}`:currentContact.uid):null;
-    if(!currentContact||snap.key!==expectedKey){
+    const senderKey=snap.key; // uid do remetente ou "group_{gid}"
+    const isGroup=senderKey.startsWith('group_');
+    const expectedKey=currentContact
+      ?(currentChatType==='group'?`group_${currentContact.uid}`:currentContact.uid)
+      :null;
+
+    // Só exibe o toast e incrementa não lidas se o usuário NÃO está já
+    // nesse chat — se estiver olhando para ele, as mensagens são lidas na hora.
+    if(!currentContact||senderKey!==expectedKey){
       showNotif(d,d.name,d.text);
+      // Incrementa contador de não lidas na entrada correspondente da sidebar
+      if(isGroup){
+        const gid=senderKey.slice(6); // remove prefixo "group_"
+        const curUnread=(groups[gid]?.unread||0)+1;
+        groups[gid]={...(groups[gid]||{}),unread:curUnread};
+        renderSidebarList();
+        // Não persiste unread de grupo no Firebase (seria escrita cruzada) —
+        // mantemos só em memória local; zera ao abrir o chat do grupo.
+      }else{
+        const curUnread=(contacts[senderKey]?.unread||0)+1;
+        contacts[senderKey]={...(contacts[senderKey]||{}),unread:curUnread};
+        renderSidebarList();
+        // Persiste no banco para que o estado seja preservado ao recarregar
+        await update(ref(fbDb,`users/${currentUser.uid}/contacts/${senderKey}`),{unread:curUnread}).catch(()=>{});
+      }
     }
-    await remove(ref(fbDb,`notifications/${currentUser.uid}/${snap.key}`));
+
+    await remove(ref(fbDb,`notifications/${currentUser.uid}/${senderKey}`));
   });
 }
 
@@ -2645,10 +2720,11 @@ function showNotif(sender,title,text){
   document.body.appendChild(n);
   setTimeout(()=>n.remove(),4000);
 
-  // Notificação nativa do sistema operacional — só dispara quando a aba/janela
-  // não está em foco (evita duplicar aviso quando a pessoa já está olhando o
-  // app) e quando a permissão já foi concedida anteriormente.
-  if(document.hidden&&'Notification' in window&&Notification.permission==='granted'){
+  // Notificação nativa do sistema operacional — só dispara quando a janela/aba
+  // não está em foco. Usa hasFocus() em vez de document.hidden porque em PWA
+  // instalado (modo standalone), a janela minimizada tem hidden=false mas
+  // hasFocus()=false — o que é exatamente quando o usuário precisa ser avisado.
+  if(!document.hasFocus()&&'Notification' in window&&Notification.permission==='granted'){
     try{
       const osNotif=new Notification(title,{
         body:text,
