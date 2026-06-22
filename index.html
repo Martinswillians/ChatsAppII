@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChatsApp - Mensagens com privacidade e segurança</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#25D366">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ChatsApp">
+<link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4ac_3d.png">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root {
@@ -133,9 +139,9 @@ video { display:block; max-width:100%; max-height:100%; }
 #msgs::-webkit-scrollbar-thumb { background:var(--border);border-radius:2px; }
 .msg { max-width:65%;padding:8px 12px;border-radius:8px;position:relative;word-wrap:break-word;animation:fi .2s ease; }
 .msg.sent { padding-right:30px; }
-.msg-more-btn { position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.15);border:none;color:inherit;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:13px;opacity:0;transition:opacity .15s; }
-.msg.sent:hover .msg-more-btn { display:flex;opacity:1; }
-@media (max-width:768px){ .msg-more-btn { display:flex !important;opacity:.7; } }
+.msg-more-btn { position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:4px;background:transparent;border:none;color:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.55;transition:opacity .15s,background .15s; }
+.msg-more-btn:hover { opacity:1;background:rgba(0,0,0,.15); }
+.msg-more-btn svg { width:14px;height:14px; }
 @keyframes fi { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
 .msg.sent { background:var(--bg-sent);align-self:flex-end;border-bottom-right-radius:2px; }
 .msg.recv { background:var(--bg-recv);align-self:flex-start;border-bottom-left-radius:2px; }
@@ -182,6 +188,8 @@ video { display:block; max-width:100%; max-height:100%; }
 .edit-indicator-label { font-size:12px;color:var(--primary);font-weight:600; }
 .edit-indicator-text { font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 .msg-context-menu { padding:8px;gap:0;max-width:280px; }
+#msg-context-modal.anchored { background:transparent; }
+#msg-context-modal.anchored .msg-context-menu { width:220px;max-width:220px;box-shadow:0 4px 24px rgba(0,0,0,.5);border:1px solid var(--border); }
 .msg-context-menu .profile-menu-item { padding:12px 14px;border-radius:8px; }
 .msg-ctx-expired-note { font-size:12px;color:var(--text2);padding:10px 14px;text-align:center;line-height:1.5; }
 .inp-wrap { flex:1;background:var(--bg-input);border-radius:22px;padding:10px 16px;display:flex;align-items:center; }
@@ -1396,6 +1404,7 @@ window.openGroupInfo=()=>{
 
   const listEl=document.getElementById('gi-members-list');
   listEl.innerHTML='<div style="color:var(--text2);font-size:13px">Carregando membros...</div>';
+  const isOwner=g.createdBy===currentUser.uid;
   Promise.all(memberUids.map(uid=>get(ref(fbDb,`users/${uid}`)).then(s=>({uid,data:s.val()})))).then(results=>{
     listEl.innerHTML=results.map(({uid,data})=>{
       if(!data)return '';
@@ -1403,6 +1412,13 @@ window.openGroupInfo=()=>{
       const avHTML=data.photoData
         ?`<img src="${data.photoData}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`
         :data.emoji||'👤';
+      // Botão de remover: só o criador vê, e nunca pode remover a si mesmo
+      // (para sair do grupo, o fluxo correto é excluir o grupo ou editar membros)
+      const removeBtn=(isOwner&&!isCreator)
+        ?`<button class="ic-btn" onclick="removeGroupMember('${uid}','${esc(data.name||'este membro')}')" title="Remover do grupo" style="color:#EF4444">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>`
+        :'';
       return `
       <div style="display:flex;align-items:center;gap:10px">
         <div class="ci-av" style="width:36px;height:36px;font-size:18px;background:${data.photoData?'transparent':data.color||'#555'}">${avHTML}</div>
@@ -1410,6 +1426,7 @@ window.openGroupInfo=()=>{
           <div style="font-size:14px">${data.name||'Familiar'}${uid===currentUser.uid?' (você)':''}</div>
           ${isCreator?'<div style="font-size:12px;color:var(--primary)">Criador do grupo</div>':''}
         </div>
+        ${removeBtn}
       </div>`;
     }).join('');
   });
@@ -1420,6 +1437,27 @@ window.openGroupInfo=()=>{
 };
 
 window.closeGroupInfo=()=>document.getElementById('group-info-modal').classList.remove('on');
+
+// Remove um único membro do grupo sem precisar abrir o modal de edição
+// completo — usa o mesmo sistema de convites (group_invites) já existente
+// para garantir que cada usuário só escreva em seu próprio espaço no banco.
+window.removeGroupMember=async(uid,name)=>{
+  const g=currentContact;
+  if(!g||currentChatType!=='group'||g.createdBy!==currentUser.uid)return;
+  if(!confirm(`Remover ${name} do grupo "${g.name}"?`))return;
+
+  try{
+    const newMembers={...g.members};
+    delete newMembers[uid];
+    await update(ref(fbDb,`groups/${g.uid}`),{members:newMembers});
+    await set(ref(fbDb,`group_invites/${uid}/${g.uid}`),{action:'removed',ts:Date.now()});
+    // Atualiza a tela de informações imediatamente, sem esperar o próximo onValue
+    currentContact={...currentContact,members:newMembers};
+    openGroupInfo();
+  }catch(e){
+    showNotif({emoji:'⚠️',color:'#EF4444'},'Erro','Não foi possível remover o membro.');
+  }
+};
 
 window.previewPhoto=(e)=>{
   const file=e.target.files[0];
@@ -1563,6 +1601,19 @@ function showApp(){
   listenGroupInvites();
   listenNotifications();
   listenCalls();
+  requestNotificationPermission();
+}
+
+// Solicita permissão para notificações do sistema operacional — necessário
+// para avisar sobre novas mensagens quando o app está minimizado ou em outra
+// aba (ex: aberto pelo atalho instalado na área de trabalho). Só pergunta se
+// ainda não foi perguntado antes (nem concedido, nem negado).
+function requestNotificationPermission(){
+  if(!('Notification' in window))return;
+  if(Notification.permission==='default'){
+    // Pequeno atraso para não competir com a animação de entrada da tela
+    setTimeout(()=>{ Notification.requestPermission(); },1500);
+  }
 }
 
 // =========================================================
@@ -1979,30 +2030,15 @@ let msgContextTarget=null; // {msgId, msg}
 let longPressTimer=null;
 
 function attachMsgContextHandlers(div,msgId,msg){
-  // Botão visível "⋮" — aparece ao passar o mouse (desktop) ou sempre visível
-  // em telas touch (mobile), já que toque longo sozinho não é descoberto
-  // facilmente pela maioria das pessoas.
+  // Seta de "mais opções" no canto da mensagem — sempre visível, clique direto
+  // abre o menu. Sem depender de toque longo, que no Safari/iOS conflita com
+  // o menu de seleção de texto nativo do sistema (ver chamado anterior).
   const moreBtn=document.createElement('button');
   moreBtn.className='msg-more-btn';
   moreBtn.title='Mais opções';
-  moreBtn.innerHTML='⋮';
-  moreBtn.onclick=(e)=>{ e.stopPropagation(); openMsgContextMenu(msgId,msg); };
+  moreBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
+  moreBtn.onclick=(e)=>{ e.stopPropagation(); openMsgContextMenu(msgId,msg,e); };
   div.appendChild(moreBtn);
-
-  // Desktop: clique direito também abre o menu (atalho extra)
-  div.oncontextmenu=(e)=>{
-    e.preventDefault();
-    openMsgContextMenu(msgId,msg);
-  };
-  // Mobile: toque longo (~500ms), cancelado se o dedo se mover (evita
-  // conflito com o scroll natural da lista de mensagens)
-  let moved=false;
-  div.ontouchstart=()=>{
-    moved=false;
-    longPressTimer=setTimeout(()=>{ if(!moved) openMsgContextMenu(msgId,msg); },500);
-  };
-  div.ontouchmove=()=>{ moved=true; clearTimeout(longPressTimer); };
-  div.ontouchend=()=>clearTimeout(longPressTimer);
 }
 
 function canEditOrDelete(msg){
@@ -2011,14 +2047,40 @@ function canEditOrDelete(msg){
   return elapsed<=EDIT_DELETE_WINDOW_MS;
 }
 
-window.openMsgContextMenu=(msgId,msg)=>{
+window.openMsgContextMenu=(msgId,msg,e)=>{
   msgContextTarget={msgId,msg};
   const withinWindow=canEditOrDelete(msg);
   const canEditText=withinWindow&&!msg.fileData&&!msg.audioData&&!msg.sticker; // só texto puro é editável
   document.getElementById('msg-ctx-edit').style.display=canEditText?'':'none';
   document.getElementById('msg-ctx-delete').style.display=withinWindow?'':'none';
   document.getElementById('msg-ctx-expired').style.display=withinWindow?'none':'';
-  document.getElementById('msg-context-modal').classList.add('on');
+
+  const overlay=document.getElementById('msg-context-modal');
+  const menu=overlay.querySelector('.msg-context-menu');
+
+  // Em telas largas (desktop), ancora o menu próximo ao botão clicado, como
+  // um dropdown real, em vez de centralizar na tela inteira.
+  if(e&&window.innerWidth>768){
+    overlay.classList.add('anchored');
+    const rect=e.currentTarget.getBoundingClientRect();
+    menu.style.position='fixed';
+    menu.style.margin='0';
+    // Por padrão abre alinhado à direita do botão, ajustando se sair da tela
+    let left=rect.right-220;
+    let top=rect.bottom+4;
+    if(left<8)left=8;
+    if(top+260>window.innerHeight) top=rect.top-264;
+    menu.style.left=left+'px';
+    menu.style.top=top+'px';
+  }else{
+    overlay.classList.remove('anchored');
+    menu.style.position='';
+    menu.style.left='';
+    menu.style.top='';
+    menu.style.margin='';
+  }
+
+  overlay.classList.add('on');
 };
 window.closeMsgContextMenu=()=>{
   document.getElementById('msg-context-modal').classList.remove('on');
@@ -2582,6 +2644,22 @@ function showNotif(sender,title,text){
   n.innerHTML=`<div class="notif-av" style="background:${sender?.photoData?'transparent':sender?.color||'#555'}">${avHTML}</div><div><div class="notif-name">${title}</div><div class="notif-text">${text}</div></div>`;
   document.body.appendChild(n);
   setTimeout(()=>n.remove(),4000);
+
+  // Notificação nativa do sistema operacional — só dispara quando a aba/janela
+  // não está em foco (evita duplicar aviso quando a pessoa já está olhando o
+  // app) e quando a permissão já foi concedida anteriormente.
+  if(document.hidden&&'Notification' in window&&Notification.permission==='granted'){
+    try{
+      const osNotif=new Notification(title,{
+        body:text,
+        icon:sender?.photoData||'https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4ac_3d.png',
+        tag:'chatsapp-msg' // agrupa notificações sucessivas em vez de empilhar várias
+      });
+      osNotif.onclick=()=>{ window.focus(); osNotif.close(); };
+    }catch(e){
+      console.error('Erro ao exibir notificação do sistema:',e);
+    }
+  }
 }
 
 // =========================================================
@@ -2969,6 +3047,18 @@ window.acceptCall=async()=>{
   await remove(ref(fbDb,`calls/${currentUser.uid}`));
 };
 
+</script>
+<script>
+// Registra o Service Worker (necessário para o app ser instalável como PWA
+// e ganhar um atalho na área de trabalho / tela inicial). Roda isolado do
+// script principal do app para não competir com sua inicialização.
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(e=>{
+      console.error('Falha ao registrar Service Worker:',e);
+    });
+  });
+}
 </script>
 </body>
 </html>
