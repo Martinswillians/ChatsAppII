@@ -155,7 +155,13 @@ video { display:block; max-width:100%; max-height:100%; }
 .chat-inp { padding:10px 14px;background:var(--bg-sidebar);display:flex;align-items:center;gap:10px;flex-shrink:0;position:relative; }
 .emoji-btn,.att-btn { background:none;border:none;color:var(--text2);cursor:pointer;font-size:22px;padding:6px;border-radius:50%;transition:all .2s;display:flex;align-items:center;justify-content:center; }
 .emoji-btn:hover,.att-btn:hover { color:var(--text);background:var(--hover); }
-.file-preview-bar { display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--bg-input);border-top:1px solid var(--border); }
+.file-send-overlay { position:absolute;inset:0;background:var(--bg-chat);z-index:50;display:flex;flex-direction:column; }
+.file-send-topbar { display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-sidebar);border-bottom:1px solid var(--border); }
+.file-send-preview { flex:1;display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden; }
+.file-send-preview img { max-width:100%;max-height:100%;border-radius:8px;object-fit:contain; }
+.file-send-doc { display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;background:var(--bg-sidebar);border-radius:12px;min-width:200px;text-align:center; }
+.file-send-bottom { display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-sidebar);border-top:1px solid var(--border); }
+.file-send-caption { flex:1;margin:0; }
 .mic-btn { touch-action:none;user-select:none; }
 .mic-btn.recording { background:#EF4444 !important;transform:scale(1.1); }
 .voice-rec-bar { display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-input);border-top:1px solid var(--border); }
@@ -466,14 +472,30 @@ video { display:block; max-width:100%; max-height:100%; }
         <div class="voice-rec-time" id="voice-rec-time">0:00</div>
         <div class="voice-rec-hint">Solte para enviar · arraste para cima para cancelar</div>
       </div>
-      <div class="file-preview-bar" id="file-preview-bar" style="display:none">
-        <div class="file-preview-thumb" id="file-preview-thumb"></div>
-        <div class="file-preview-info">
-          <div class="file-preview-name" id="file-preview-name"></div>
-          <div class="file-preview-size" id="file-preview-size"></div>
+    </div>
+
+    <!-- OVERLAY DE PRÉVIA DE ARQUIVO — aparece sobre o chat quando um arquivo
+         é selecionado, substituindo toda a área de input. Estilo WhatsApp. -->
+    <div class="file-send-overlay" id="file-send-overlay" style="display:none">
+      <div class="file-send-topbar">
+        <button class="ic-btn" onclick="cancelFileAttachment()" title="Cancelar">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <span id="file-send-title" style="font-size:15px;font-weight:600;flex:1;text-align:center"></span>
+        <div style="width:34px"></div>
+      </div>
+      <div class="file-send-preview">
+        <img id="file-send-img" src="" alt="" style="display:none">
+        <div class="file-send-doc" id="file-send-doc" style="display:none">
+          <div style="font-size:48px">📄</div>
+          <div id="file-send-doc-name" style="font-size:15px;font-weight:600;margin-top:8px"></div>
+          <div id="file-send-doc-size" style="font-size:13px;color:var(--text2);margin-top:4px"></div>
         </div>
-        <button class="ic-btn" onclick="cancelFileAttachment()" title="Remover anexo">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div class="file-send-bottom">
+        <input class="inp file-send-caption" id="file-send-caption" type="text" placeholder="Adicionar legenda..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="send-btn" onclick="sendMsg()" style="flex-shrink:0;width:46px;height:46px;border-radius:50%">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
       </div>
     </div>
@@ -757,6 +779,9 @@ import { getDatabase, ref, set, get, push, onChildAdded, onChildChanged, onChild
 // fácil ao console (ex: Safari no iPhone).
 window.addEventListener('error',(e)=>{
   console.error('[ChatsApp] Erro não tratado:',e.error||e.message);
+  // "Script error." é um erro genérico do Safari para scripts cross-origin (CDN)
+  // e não indica um problema real da aplicação — suprimir para não assustar o usuário.
+  if(!e.message||e.message==='Script error.'||e.message==='Script error') return;
   const banner=document.getElementById('global-error-banner');
   if(banner){
     banner.textContent='⚠️ Ocorreu um erro inesperado. Atualize a página. Detalhe: '+(e.message||'desconhecido');
@@ -2308,22 +2333,63 @@ window.seekAudio=(e,audioId)=>{
 // =========================================================
 let pendingFile=null; // {name, size, type, dataUrl}
 let editingMsgId=null; // quando definido, sendMsg() edita esta mensagem em vez de criar uma nova
-const MAX_FILE_SIZE=2*1024*1024; // 2MB — limite seguro para Realtime Database em Base64
+const MAX_FILE_SIZE=5*1024*1024; // 5MB para arquivos não-imagem
+const MAX_IMG_DIMENSION=1920; // px — imagens são redimensionadas antes de salvar
+const IMG_QUALITY=0.82; // qualidade JPEG após compressão
 
-window.handleFileSelect=(e)=>{
+// Comprime e redimensiona uma imagem usando Canvas antes de converter para
+// Base64 — reduz arquivos de 3-10MB para ~200-500KB, viabilizando o envio
+// dentro dos limites do Firebase Realtime Database (10MB por nó).
+function compressImage(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let{width,height}=img;
+      // Redimensiona mantendo proporção se exceder o máximo
+      if(width>MAX_IMG_DIMENSION||height>MAX_IMG_DIMENSION){
+        if(width>height){ height=Math.round(height*MAX_IMG_DIMENSION/width); width=MAX_IMG_DIMENSION; }
+        else { width=Math.round(width*MAX_IMG_DIMENSION/height); height=MAX_IMG_DIMENSION; }
+      }
+      const canvas=document.createElement('canvas');
+      canvas.width=width; canvas.height=height;
+      canvas.getContext('2d').drawImage(img,0,0,width,height);
+      resolve(canvas.toDataURL('image/jpeg',IMG_QUALITY));
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('Falha ao carregar imagem')); };
+    img.src=url;
+  });
+}
+
+window.handleFileSelect=async(e)=>{
   const file=e.target.files[0];
-  e.target.value=''; // permite selecionar o mesmo arquivo de novo depois
+  e.target.value='';
   if(!file)return;
-  if(file.size>MAX_FILE_SIZE){
-    showNotif({emoji:'⚠️',color:'#EF4444'},'Arquivo muito grande','O limite é de 2MB por arquivo.');
+  const isImage=file.type.startsWith('image/');
+
+  if(!isImage&&file.size>MAX_FILE_SIZE){
+    showNotif({emoji:'⚠️',color:'#EF4444'},'Arquivo muito grande',`O limite para documentos é de ${formatFileSize(MAX_FILE_SIZE)}.`);
     return;
   }
-  const reader=new FileReader();
-  reader.onload=(ev)=>{
-    pendingFile={name:file.name,size:file.size,type:file.type,dataUrl:ev.target.result};
+
+  try{
+    let dataUrl;
+    let finalSize=file.size;
+    if(isImage){
+      // Sempre comprime imagens, independente do tamanho original
+      dataUrl=await compressImage(file);
+      // Tamanho estimado do Base64 após compressão
+      finalSize=Math.round(dataUrl.length*0.75);
+    }else{
+      const reader=new FileReader();
+      dataUrl=await new Promise((res,rej)=>{reader.onload=ev=>res(ev.target.result);reader.onerror=rej;reader.readAsDataURL(file);});
+    }
+    pendingFile={name:file.name,size:finalSize,type:isImage?'image/jpeg':file.type,dataUrl};
     showFilePreview();
-  };
-  reader.readAsDataURL(file);
+  }catch(err){
+    showNotif({emoji:'⚠️',color:'#EF4444'},'Erro','Não foi possível processar o arquivo.');
+  }
 };
 
 function formatFileSize(bytes){
@@ -2333,18 +2399,37 @@ function formatFileSize(bytes){
 }
 
 function showFilePreview(){
-  const bar=document.getElementById('file-preview-bar');
-  const thumb=document.getElementById('file-preview-thumb');
+  const overlay=document.getElementById('file-send-overlay');
   const isImage=pendingFile.type.startsWith('image/');
-  thumb.innerHTML=isImage?`<img src="${pendingFile.dataUrl}">`:'📄';
-  document.getElementById('file-preview-name').textContent=pendingFile.name;
-  document.getElementById('file-preview-size').textContent=formatFileSize(pendingFile.size);
-  bar.style.display='flex';
+
+  document.getElementById('file-send-title').textContent=pendingFile.name;
+  document.getElementById('file-send-caption').value='';
+
+  const imgEl=document.getElementById('file-send-img');
+  const docEl=document.getElementById('file-send-doc');
+
+  if(isImage){
+    imgEl.src=pendingFile.dataUrl;
+    imgEl.style.display='block';
+    docEl.style.display='none';
+  }else{
+    imgEl.style.display='none';
+    imgEl.src='';
+    document.getElementById('file-send-doc-name').textContent=pendingFile.name;
+    document.getElementById('file-send-doc-size').textContent=formatFileSize(pendingFile.size);
+    docEl.style.display='flex';
+  }
+
+  overlay.style.display='flex';
+  // Coloca foco na legenda automaticamente, com atraso para o teclado abrir suavemente
+  setTimeout(()=>document.getElementById('file-send-caption').focus(),300);
 }
 
 window.cancelFileAttachment=()=>{
   pendingFile=null;
-  document.getElementById('file-preview-bar').style.display='none';
+  document.getElementById('file-send-overlay').style.display='none';
+  document.getElementById('file-send-img').src='';
+  toggleSendOrMic();
 };
 
 // Alterna entre botão "enviar" (texto digitado) e botão "microfone" (campo vazio),
@@ -2495,8 +2580,13 @@ async function sendVoiceMessage(dataUrl,mimeType,durationSec){
 }
 
 window.sendMsg=async()=>{
+  // Se o overlay de arquivo está aberto, o texto vem do campo de legenda
+  const overlayEl=document.getElementById('file-send-overlay');
+  const overlayOpen=overlayEl&&overlayEl.style.display!=='none';
   const inp=document.getElementById('msg-inp');
-  const text=inp.value.trim();
+  const text=overlayOpen
+    ?document.getElementById('file-send-caption').value.trim()
+    :inp.value.trim();
 
   // Modo edição: atualiza a mensagem existente em vez de criar uma nova
   if(editingMsgId){
@@ -2515,7 +2605,7 @@ window.sendMsg=async()=>{
 
   if(!text&&!pendingFile)return;
   if(!currentContact)return;
-  // Guard de lista restrita: bloqueia envio de mensagem para contatos não permitidos
+  // Guard de lista restrita
   if(currentChatType==='contact'&&!isUidAllowed(currentContact.uid)){
     showNotif({emoji:'🔒',color:'#EF4444'},'Bloqueado','Lista restrita ativa: este contato não está na lista permitida.');
     return;
@@ -2527,7 +2617,7 @@ window.sendMsg=async()=>{
       return;
     }
   }
-  inp.value='';
+  if(!overlayOpen) inp.value='';
 
   const msg={
     text,sid:currentUser.uid,sname:currentUser.displayName,ts:Date.now(),
