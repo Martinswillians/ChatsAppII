@@ -138,11 +138,15 @@ video { display:block; max-width:100%; max-height:100%; }
 #msgs::-webkit-scrollbar { width:4px; }
 #msgs::-webkit-scrollbar-thumb { background:var(--border);border-radius:2px; }
 .msg { max-width:65%;padding:8px 12px;border-radius:8px;position:relative;word-wrap:break-word;animation:fi .2s ease; }
-.msg-more-btn { background:none;border:none;color:inherit;cursor:pointer;padding:0 2px;opacity:.7;display:inline-flex;align-items:center;vertical-align:middle;line-height:1; }
-.msg-more-btn:hover { opacity:1; }
-.msg-more-btn svg { width:13px;height:13px; }
+.msg-more-btn { position:absolute;top:2px;right:2px;background:rgba(0,0,0,.25);border:none;color:white;cursor:pointer;width:22px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s;z-index:2; }
+.msg.sent:hover .msg-more-btn,.msg.sent .msg-more-btn:focus { opacity:1; }
+.msg-more-btn:hover { opacity:1!important;background:rgba(0,0,0,.4); }
+.msg-more-btn svg { width:13px;height:13px;flex-shrink:0; }
+/* No mobile não há hover, então mostra sempre */
+@media (hover:none){ .msg.sent .msg-more-btn { opacity:.65; } }
 @keyframes fi { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
-.msg.sent { background:var(--bg-sent);align-self:flex-end;border-bottom-right-radius:2px; }
+.msg.sent { background:var(--bg-sent);align-self:flex-end;border-bottom-right-radius:2px;padding-top:20px; }
+.msg.sent.msg-emoji,.msg.sent.sticker-msg { padding-top:8px; }
 .msg.recv { background:var(--bg-recv);align-self:flex-start;border-bottom-left-radius:2px; }
 .msg-sender { font-size:12px;font-weight:600;color:var(--primary);margin-bottom:3px; }
 .msg-text { font-size:14px;line-height:1.5; }
@@ -2101,10 +2105,10 @@ function renderMsg(msg,msgId,replaceEl){
 
   if(hasSticker){
     div.innerHTML=`
+      ${moreBtnHTML}
       ${!isSent?`<div class="msg-sender">${msg.sname||''}</div>`:''}
       <img class="msg-sticker" src="${stickerUrl(msg.sticker)}" alt="${msg.sticker}" onerror="this.outerHTML='<span class=\\'msg-sticker msg-sticker-fallback\\'>${msg.sticker}</span>'">
       <div class="msg-meta">
-        ${moreBtnHTML}
         <span class="msg-time">${time}</span>
         ${isSent?'<span class="msg-check">✓✓</span>':''}
       </div>`;
@@ -2140,11 +2144,11 @@ function renderMsg(msg,msgId,replaceEl){
   }
 
   div.innerHTML=`
+    ${moreBtnHTML}
     ${!isSent?`<div class="msg-sender">${msg.sname||''}</div>`:''}
     ${attachmentHTML}
     ${msg.text?`<div class="msg-text">${esc(msg.text)}${editedLabel}</div>`:''}
     <div class="msg-meta">
-      ${moreBtnHTML}
       <span class="msg-time">${time}</span>
       ${isSent?'<span class="msg-check">✓✓</span>':''}
     </div>`;
@@ -2333,6 +2337,7 @@ window.seekAudio=(e,audioId)=>{
 // =========================================================
 let pendingFile=null; // {name, size, type, dataUrl}
 let editingMsgId=null; // quando definido, sendMsg() edita esta mensagem em vez de criar uma nova
+let sendingMsg=false; // lock: previne duplo envio por clique rápido no botão
 const MAX_FILE_SIZE=5*1024*1024; // 5MB para arquivos não-imagem
 const MAX_IMG_DIMENSION=1920; // px — imagens são redimensionadas antes de salvar
 const IMG_QUALITY=0.82; // qualidade JPEG após compressão
@@ -2580,6 +2585,7 @@ async function sendVoiceMessage(dataUrl,mimeType,durationSec){
 }
 
 window.sendMsg=async()=>{
+  if(sendingMsg)return; // previne duplo envio por clique rápido
   // Se o overlay de arquivo está aberto, o texto vem do campo de legenda
   const overlayEl=document.getElementById('file-send-overlay');
   const overlayOpen=overlayEl&&overlayEl.style.display!=='none';
@@ -2627,35 +2633,40 @@ window.sendMsg=async()=>{
     fileData:pendingFile?.dataUrl||null
   };
   const previewLabel=pendingFile?(text?text:`📎 ${pendingFile.name}`):text;
+
+  // Fecha o overlay e limpa estado ANTES do push para UX imediata,
+  // mas guarda os dados da mensagem pois já foram copiados em `msg` acima.
+  // O lock impede segundo envio durante o await do Firebase.
+  sendingMsg=true;
   window.cancelFileAttachment();
 
   const t=new Date();const time=`${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}`;
 
-  if(currentChatType==='group'){
-    const gid=currentContact.uid;
-    await push(ref(fbDb,`messages/group_${gid}`),{...msg,ts:serverTimestamp()});
-    // Atualiza a prévia do grupo para todos os membros, e notifica cada um (exceto quem enviou)
-    const members=Object.keys(currentContact.members||{});
-    await update(ref(fbDb,`groups/${gid}`),{lastMsg:`${currentUser.displayName}: ${previewLabel}`,lastTime:time,lastTimestamp:Date.now()});
-    await Promise.all(members.filter(m=>m!==currentUser.uid).map(m=>
-      set(ref(fbDb,`notifications/${m}/group_${gid}`),{
-        name:`${currentContact.name} (grupo)`,emoji:currentContact.emoji||'👨‍👩‍👧‍👦',
-        color:currentContact.color||'#7B61FF',photoData:currentContact.photoData||null,
-        text:`${currentUser.displayName}: ${previewLabel}`,ts:Date.now()
-      })
-    ));
-    return;
+  try{
+    if(currentChatType==='group'){
+      const gid=currentContact.uid;
+      await push(ref(fbDb,`messages/group_${gid}`),{...msg,ts:serverTimestamp()});
+      const members=Object.keys(currentContact.members||{});
+      await update(ref(fbDb,`groups/${gid}`),{lastMsg:`${currentUser.displayName}: ${previewLabel}`,lastTime:time,lastTimestamp:Date.now()});
+      await Promise.all(members.filter(m=>m!==currentUser.uid).map(m=>
+        set(ref(fbDb,`notifications/${m}/group_${gid}`),{
+          name:`${currentContact.name} (grupo)`,emoji:currentContact.emoji||'👨‍👩‍👧‍👦',
+          color:currentContact.color||'#7B61FF',photoData:currentContact.photoData||null,
+          text:`${currentUser.displayName}: ${previewLabel}`,ts:Date.now()
+        })
+      ));
+    }else{
+      const cid=chatId(currentUser.uid,currentContact.uid);
+      await push(ref(fbDb,`messages/${cid}`),{...msg,ts:serverTimestamp()});
+      await update(ref(fbDb,`users/${currentUser.uid}/contacts/${currentContact.uid}`),{lastMsg:previewLabel,lastTime:time,lastTimestamp:Date.now()});
+      await set(ref(fbDb,`notifications/${currentContact.uid}/${currentUser.uid}`),{
+        name:currentUser.displayName,emoji:currentUser.emoji,color:currentUser.color,
+        photoData:currentUser.photoData||null,text:previewLabel,ts:Date.now()
+      });
+    }
+  }finally{
+    sendingMsg=false; // sempre libera o lock, mesmo em caso de erro
   }
-
-  const cid=chatId(currentUser.uid,currentContact.uid);
-  await push(ref(fbDb,`messages/${cid}`),{...msg,ts:serverTimestamp()});
-  // Atualizar última mensagem
-  await update(ref(fbDb,`users/${currentUser.uid}/contacts/${currentContact.uid}`),{lastMsg:previewLabel,lastTime:time,lastTimestamp:Date.now()});
-  // Notificar outro usuário
-  await set(ref(fbDb,`notifications/${currentContact.uid}/${currentUser.uid}`),{
-    name:currentUser.displayName,emoji:currentUser.emoji,color:currentUser.color,
-    photoData:currentUser.photoData||null,text:previewLabel,ts:Date.now()
-  });
 };
 
 // Typing indicator
