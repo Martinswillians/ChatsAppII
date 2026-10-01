@@ -1,43 +1,71 @@
-// Service Worker do ChatsApp Família: recebe push (FCM) com o app fechado e mostra a notificação.
-const ICON='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4ac_3d.png';
-
-self.addEventListener('install',()=>self.skipWaiting());
-self.addEventListener('activate',(e)=>e.waitUntil((async()=>{
-  // limpa caches de versões antigas para o app sempre carregar a versão nova
-  for(const k of await caches.keys()) await caches.delete(k);
-  await self.clients.claim();
-})()));
-self.addEventListener('fetch',()=>{}); // necessário para o app ser instalável (PWA)
-
-self.addEventListener('push',(event)=>{
-  event.waitUntil((async()=>{
-    let p={};
-    try{ p=event.data?event.data.json():{}; }catch(e){ p={data:{body:event.data&&event.data.text()}}; }
-    const d=p.data||p.notification||p;
-
-    // App aberto e visível: o próprio app já avisa (toast + som), não duplica.
-    const wins=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    if(wins.some(c=>c.visibilityState==='visible'))return;
-
-    const tag=d.tag||'chatsapp';
-    // Se o app acabou de mostrar este mesmo aviso, só substitui em silêncio.
-    const recent=(await self.registration.getNotifications({tag}))
-      .some(n=>n.data&&n.data.ts&&Date.now()-n.data.ts<10000);
-    await self.registration.showNotification(d.title||'ChatsApp',{
-      body:d.body||'Nova mensagem',icon:ICON,badge:ICON,tag,renotify:!recent,
-      vibrate:[120,60,120],data:{key:d.key||'',ts:Date.now()}
-    });
-  })());
+// ═══════════════════════════════════════════════
+// Service Worker — Controle de Job (Atualizado)
+// ═══════════════════════════════════════════════
+// Mude essa versão sempre que fizer uma grande atualização no código do app
+const CACHE_NAME = "jobcontrol-v4.14";
+const STATIC_ASSETS = [
+  "./",
+  "./index.html",
+  "./css/style.css",
+  "./js/app.js",
+  "./js/firebase-config.js",
+  "./js/clients.js",
+  "./js/access.js",
+  "./manifest.json",
+  "./favicon.ico",
+  "./assets/icon-192.png",
+  "./assets/icon-512.png"
+];
+// Instalação: Salva os arquivos estáticos no cache inicial
+self.addEventListener("install", e => {
+  e.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_ASSETS))
+      .catch(err => console.warn("SW cache install warning:", err))
+  );
+  self.skipWaiting(); // Força o SW novo a se tornar ativo imediatamente
 });
-
-self.addEventListener('notificationclick',(event)=>{
-  event.notification.close();
-  const key=(event.notification.data&&event.notification.data.key)||'';
-  event.waitUntil((async()=>{
-    const wins=await self.clients.matchAll({type:'window',includeUncontrolled:true});
-    for(const c of wins){
-      if('focus' in c){ await c.focus(); if(key)c.postMessage({type:'open-chat',key}); return; }
-    }
-    await self.clients.openWindow(key?'./?chat='+encodeURIComponent(key):'./');
-  })());
+// Ativação: Limpa caches antigos de versões anteriores automaticamente
+self.addEventListener("activate", e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+      )
+    )
+  );
+  self.clients.claim(); // Assume o controle da página imediatamente
+});
+// Intercepção de requisições: Estratégia Stale-While-Revalidate
+self.addEventListener("fetch", e => {
+  // Ignora chamadas do Firebase/APIs externas para rodarem direto da rede
+  if (
+    e.request.url.includes("firebase") ||
+    e.request.url.includes("googleapis") ||
+    e.request.url.includes("gstatic") ||
+    e.request.method !== "GET"
+  ) {
+    return;
+  }
+  e.respondWith(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.match(e.request).then(cachedResponse => {
+        // Dispara a busca na rede em segundo plano para atualizar o cache
+        const fetchPromise = fetch(e.request).then(networkResponse => {
+          // Só faz cache de respostas HTTP/HTTPS válidas (ignora chrome-extension etc)
+          if (
+            networkResponse.status === 200 &&
+            e.request.url.startsWith("http")
+          ) {
+            cache.put(e.request, networkResponse.clone());
+          }
+          return networkResponse;
+        }).catch(() => {
+          // Falha silenciosa se estiver offline
+        });
+        // Retorna o que estava no cache imediatamente (velocidade), ou aguarda a rede se não houver cache
+        return cachedResponse || fetchPromise;
+      });
+    })
+  );
 });
