@@ -19,68 +19,9 @@ Se um dia precisar trocar de projeto Firebase, basta editar o bloco `firebaseCon
 
 ## 🔒 Passo obrigatório: Regras do Realtime Database
 
-Sem isso, o app vai funcionar parcialmente e dar erro **"Permission denied"** ao adicionar familiares, enviar mensagens ou notificar chamadas.
+Sem isso o app dá **"permission_denied"** (ex.: ao criar grupo). Abra o arquivo `database.rules.json` desta pasta, copie **todo** o conteúdo, cole em Firebase Console → **Realtime Database** → **Regras** (substituindo o que está lá) e clique em **Publicar**.
 
-No Firebase Console → **Realtime Database** → **Regras**, cole exatamente isto e clique em **Publicar**:
-
-```json
-{
-  "rules": {
-    "users": {
-      "$uid": {
-        ".read": "auth != null",
-        ".write": "auth != null && auth.uid == $uid"
-      }
-    },
-    "email_index": {
-      ".read": "auth != null",
-      ".write": "auth != null"
-    },
-    "contact_requests": {
-      "$uid": {
-        ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null"
-      }
-    },
-    "messages": {
-      "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    },
-    "notifications": {
-      "$uid": {
-        ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null"
-      }
-    },
-    "calls": {
-      "$uid": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    },
-    "signaling": {
-      "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    },
-    "call_hangup": {
-      "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    },
-    "typing": {
-      "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
-      }
-    }
-  }
-}
-```
+Ele inclui os nós que faltavam nas regras antigas: `groups`, `group_invites` e `call_hangup` (além de `fcm_tokens`).
 
 ---
 
@@ -140,3 +81,28 @@ firebase deploy
 ```
 
 Depois de hospedado, qualquer familiar só precisa abrir o link e se cadastrar — sem nenhum passo extra de configuração.
+
+
+---
+
+## 🔔 Notificações em segundo plano (app fechado / celular bloqueado)
+
+Usa **Firebase Cloud Messaging (push)** + um **Cloudflare Worker gratuito** (pasta `worker/`) que envia o push. Não precisa do plano Blaze nem de cartão.
+
+1. **Chave VAPID** — Firebase → Configurações do projeto → Cloud Messaging → *Certificados push da Web*. Use o **botão de copiar** e cole em `VAPID_KEY` no `index.html` (87 caracteres, uma linha só).
+2. **Conta de serviço** — Firebase → Configurações do projeto → *Contas de serviço* → **Gerar nova chave privada**. Baixa um `.json`. ⚠️ **Nunca suba esse arquivo para o GitHub** (o repositório é público). Ele só vai para a Cloudflare, no passo 3.
+3. **Worker** — em dash.cloudflare.com → *Workers & Pages* → **Create** → *Hello World* → nome `chatsapp-push` → **Deploy** → **Edit code** → apague tudo, cole o conteúdo de `worker/worker.js` → **Deploy**.
+   Depois, em **Settings → Variables and secrets** → Add → tipo **Secret**, nome `SERVICE_ACCOUNT_JSON`, valor = o conteúdo inteiro do `.json` do passo 2 → Deploy.
+4. **URL do Worker** — copie a URL do Worker (`https://chatsapp-push.SEU-SUBDOMINIO.workers.dev`) e cole em `PUSH_WORKER_URL` no `index.html`.
+5. **Regras** — publique o `database.rules.json` (inclui `fcm_tokens`).
+6. Suba `index.html` e `sw.js` no GitHub Pages. Cada pessoa abre o app e permite as notificações.
+
+Se o `ALLOWED_ORIGIN` for diferente de `https://martinswillians.github.io`, crie a variável `ALLOWED_ORIGIN` no Worker com o endereço do seu site (sem `/` no final).
+
+**Conferir se está funcionando:** no console do app deve aparecer `[Push] aparelho registrado...`, e em Firebase → Realtime Database deve existir o nó `fcm_tokens`. Para testar, feche a aba do destinatário e mande uma mensagem com outra conta.
+
+**iPhone:** só funciona (iOS 16.4+) com o app instalado na Tela de Início (Safari → Compartilhar → Adicionar à Tela de Início) e aberto por esse ícone.
+
+**Limites do plano grátis:** 100 mil pedidos por dia no Worker, muito acima do uso de uma família. Qualquer pessoa cadastrada no app consegue pedir push ao Worker (mesmo nível de confiança das regras do banco); se o cadastro for aberto ao público, vale pensar em restringi-lo.
+
+**Limpeza no GitHub:** apague `index.js`, `package.json` e `firebase.json` da raiz do repositório. Eram da Cloud Function, que não é mais usada.

@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>💬</text></svg>">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChatsApp - Mensagens com privacidade e segurança</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#25D366">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChatsApp">
 <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4ac_3d.png">
@@ -815,8 +817,10 @@ let contacts={}, callTimer=null, callSec=0, localStream=null;
 let muted=false, camOff=false, unsubMsgs=null, typingTimer=null;
 // Push em segundo plano (FCM). Gere a chave em Firebase Console > Configurações do projeto >
 // Cloud Messaging > Certificados push da Web > "Gerar par de chaves" e cole abaixo.
-const VAPID_KEY='COLEBBy8VhkxJDVOVXx9-iF5I5OBWS5pngfKu33Iku080SW2eKwhwH2nE8MWtEw810nr2SeoZySIfE3qbENpElcDh3Q';
+const VAPID_KEY='BN5F8ydEpYXauV2p4dJtT7eZv9OXLcy95yKfpjKcH29UF6Mn2J1qceLMNN_6pC2enxD4ogOTE964OcbMOy3DllY';
 const DEFAULT_ICON='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4ac_3d.png';
+// URL do Worker da Cloudflare que envia o push com o app fechado (veja worker/ e o README).
+const PUSH_WORKER_URL='https://chatsapp-push.willbrasilia.workers.dev';
 let appUnsubs=[], msgListenToken=0, swReg=null, fcmToken=null, fcmMessaging=null;
 // onValue/onChildAdded devolvem a função que cancela o listener; guardamos todas para
 // poder cancelar ao sair da conta (antes ficavam vivas e duplicavam eventos).
@@ -1696,6 +1700,19 @@ function requestNotificationPermission(){
 }
 
 // ---------- Push em segundo plano (FCM + Service Worker) ----------
+// Avisa o Worker de que há mensagem nova; ele envia o push aos aparelhos dos destinatários.
+// Não bloqueia o envio da mensagem: se falhar, o chat funciona normalmente.
+async function pushNotify(toUids,key,title,body){
+  try{
+    if(!PUSH_WORKER_URL||PUSH_WORKER_URL.startsWith('COLE')||!toUids.length||!fbAuth?.currentUser)return;
+    const idToken=await fbAuth.currentUser.getIdToken();
+    const r=await fetch(PUSH_WORKER_URL,{method:'POST',
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+idToken},
+      body:JSON.stringify({toUids,key,title,body})});
+    if(!r.ok)console.warn('[Push] Worker respondeu',r.status,await r.text().catch(()=>''));
+  }catch(e){ console.warn('[Push] não consegui avisar o Worker:',e); }
+}
+
 async function initServiceWorker(){
   if(!('serviceWorker' in navigator))return null;
   if(swReg)return swReg;
@@ -1714,11 +1731,17 @@ async function initServiceWorker(){
 async function setupPush(){
   try{
     if(!currentUser||!('Notification' in window)||Notification.permission!=='granted')return false;
-    if(!VAPID_KEY||VAPID_KEY.startsWith('COLE_')){ console.warn('[Push] VAPID_KEY não configurada.'); return false; }
+    // limpa espaços, quebras de linha e aspas que costumam vir junto ao copiar do Console
+    const vapid=String(VAPID_KEY||'').replace(/[\s"'`]/g,'');
+    if(!vapid||vapid.startsWith('COLE')){ console.warn('[Push] VAPID_KEY não configurada.'); return false; }
+    if(!/^[A-Za-z0-9_-]{87}$/.test(vapid)){
+      console.error('[Push] VAPID_KEY inválida: tem '+vapid.length+' caracteres (o correto são 87, só letras, números, - e _). Copie de novo com o botão de copiar do Firebase Console.');
+      return false;
+    }
     if(!(await fcmSupported()))return false;
     const reg=await initServiceWorker(); if(!reg)return false;
     fcmMessaging=fcmMessaging||getMessaging(fbApp);
-    const token=await getToken(fcmMessaging,{vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
+    const token=await getToken(fcmMessaging,{vapidKey:vapid,serviceWorkerRegistration:reg});
     if(!token)return false;
     fcmToken=token;
     await set(ref(fbDb,`fcm_tokens/${currentUser.uid}/${token}`),{ts:Date.now(),ua:navigator.userAgent.slice(0,120)});
@@ -2633,6 +2656,7 @@ async function sendVoiceMessage(dataUrl,mimeType,durationSec){
         text:`${currentUser.displayName}: ${previewLabel}`,ts:Date.now()
       })
     ));
+    pushNotify(members.filter(m=>m!==currentUser.uid),'group_'+gid,`${currentContact.name} (grupo)`,`${currentUser.displayName}: ${previewLabel}`);
     return;
   }
 
@@ -2643,6 +2667,7 @@ async function sendVoiceMessage(dataUrl,mimeType,durationSec){
     name:currentUser.displayName,emoji:currentUser.emoji,color:currentUser.color,
     photoData:currentUser.photoData||null,text:previewLabel,ts:Date.now()
   });
+  pushNotify([currentContact.uid],currentUser.uid,currentUser.displayName,previewLabel);
 }
 
 window.sendMsg=async()=>{
@@ -2710,6 +2735,7 @@ window.sendMsg=async()=>{
         text:`${currentUser.displayName}: ${previewLabel}`,ts:Date.now()
       })
     ));
+    pushNotify(members.filter(m=>m!==currentUser.uid),'group_'+gid,`${currentContact.name} (grupo)`,`${currentUser.displayName}: ${previewLabel}`);
     return;
   }
 
@@ -2722,6 +2748,7 @@ window.sendMsg=async()=>{
     name:currentUser.displayName,emoji:currentUser.emoji,color:currentUser.color,
     photoData:currentUser.photoData||null,text:previewLabel,ts:Date.now()
   });
+  pushNotify([currentContact.uid],currentUser.uid,currentUser.displayName,previewLabel);
 };
 
 // Typing indicator
@@ -2876,6 +2903,7 @@ window.sendSticker=async(sticker)=>{
         text:`${currentUser.displayName}: ${previewLabel}`,ts:Date.now()
       })
     ));
+    pushNotify(members.filter(m=>m!==currentUser.uid),'group_'+gid,`${currentContact.name} (grupo)`,`${currentUser.displayName}: ${previewLabel}`);
     return;
   }
 
@@ -2886,6 +2914,7 @@ window.sendSticker=async(sticker)=>{
     name:currentUser.displayName,emoji:currentUser.emoji,color:currentUser.color,
     photoData:currentUser.photoData||null,text:previewLabel,ts:Date.now()
   });
+  pushNotify([currentContact.uid],currentUser.uid,currentUser.displayName,previewLabel);
 };
 
 // =========================================================
