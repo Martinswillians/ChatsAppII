@@ -797,7 +797,7 @@ video { display:block; max-width:100%; max-height:100%; }
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getDatabase, ref, set, get, push, onChildAdded, onChildChanged, onChildRemoved, onValue, off, update, onDisconnect, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, get, push, onChildAdded, onChildChanged, onChildRemoved, onValue, off, update, onDisconnect, remove, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getMessaging, getToken, deleteToken, isSupported as fcmSupported } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
 // Handler global de erro: se qualquer parte do app falhar de forma inesperada,
@@ -1633,6 +1633,32 @@ function statusText(c){
   return 'offline';
 }
 
+let backfillRunning=false;
+async function backfillLastMsgs(cids){
+  if(backfillRunning||!currentUser||!cids.length)return;
+  const flag='chatsapp_lastmsg_v1_'+currentUser.uid;
+  try{ if(localStorage.getItem(flag)==='1')return; }catch(e){}
+  backfillRunning=true;
+  try{
+    for(const cid of cids){
+      const sn=await get(query(ref(fbDb,`messages/${chatId(currentUser.uid,cid)}`),limitToLast(1)));
+      let m=null; sn.forEach(x=>{ m=x.val(); });
+      if(!m||!m.ts)continue;
+      if(m.ts<=((contacts[cid]&&contacts[cid].lastTimestamp)||0))continue; // a lista já está em dia
+      const label=m.deleted?'🚫 Mensagem apagada'
+        :m.text?m.text
+        :m.audioData?'🎤 Mensagem de voz'
+        :m.sticker?`${m.sticker} Figurinha`
+        :m.fileData?`📎 ${m.fileName||'Arquivo'}`:'';
+      const tt=new Date(m.ts);
+      const hhmm=`${tt.getHours().toString().padStart(2,'0')}:${tt.getMinutes().toString().padStart(2,'0')}`;
+      await update(ref(fbDb,`users/${currentUser.uid}/contacts/${cid}`),{lastMsg:String(label).slice(0,200),lastTime:hhmm,lastTimestamp:m.ts});
+    }
+    try{ localStorage.setItem(flag,'1'); }catch(e){}
+  }catch(e){ console.warn('[Lista] não consegui reordenar as conversas antigas:',e); }
+  backfillRunning=false;
+}
+
 async function onAuthChange(user){
   if(user){
     const snap=await get(ref(fbDb,`users/${user.uid}`));
@@ -2011,6 +2037,7 @@ function loadContacts(){
     });
 
     if(!cids.length) renderSidebarList();
+    backfillLastMsgs(cids);
   });
 }
 
@@ -2120,11 +2147,11 @@ function renderSidebarList(){
         ${type==='contact'&&c.online?'<div class="online-dot"></div>':''}
       </div>
       <div class="ci-info">
-        <div class="ci-name">${nameLabel}</div>
-        <div class="ci-last">${c.lastMsg||'Toque para conversar'}</div>
+        <div class="ci-name">${esc(nameLabel)}</div>
+        <div class="ci-last">${esc(c.lastMsg||'Toque para conversar')}</div>
       </div>
       <div class="ci-meta">
-        <div class="ci-time">${c.lastTime||''}</div>
+        <div class="ci-time">${esc(c.lastTime||'')}</div>
         ${c.unread?`<div class="badge">${c.unread}</div>`:''}
       </div>`;
     item.onclick=()=>type==='group'?openGroupChat(uid,c):openChat(uid,c);
@@ -3082,6 +3109,13 @@ function listenNotifications(){
 
     // Só exibe o toast e incrementa não lidas se o usuário NÃO está já
     // nesse chat — se estiver olhando para ele, as mensagens são lidas na hora.
+    // Atualiza prévia, hora e ordem da conversa na MINHA lista: o remetente não pode gravar no meu
+    // registro (regras do banco), então cada lado atualiza o próprio ao receber o aviso.
+    if(!isGroup){
+      const ts=Number(d.ts)||Date.now(), tt=new Date(ts);
+      const hhmm=`${tt.getHours().toString().padStart(2,'0')}:${tt.getMinutes().toString().padStart(2,'0')}`;
+      update(ref(fbDb,`users/${currentUser.uid}/contacts/${senderKey}`),{lastMsg:String(d.text||'').slice(0,200),lastTime:hhmm,lastTimestamp:ts}).catch(()=>{});
+    }
     const chatOpen=!!currentContact&&senderKey===expectedKey;
     const attentive=document.visibilityState==='visible'&&document.hasFocus();
     // Chat aberto, mas janela minimizada ou em segundo plano: avisa (sem contar como não lida).
@@ -3155,7 +3189,7 @@ function showNotif(sender,title,text,tag){
   const avHTML=sender?.photoData
     ?`<img src="${sender.photoData}">`
     :`<span style="font-size:22px">${sender?.emoji||'💬'}</span>`;
-  n.innerHTML=`<div class="notif-av" style="background:${sender?.photoData?'transparent':sender?.color||'#555'}">${avHTML}</div><div><div class="notif-name">${title}</div><div class="notif-text">${text}</div></div>`;
+  n.innerHTML=`<div class="notif-av" style="background:${sender?.photoData?'transparent':sender?.color||'#555'}">${avHTML}</div><div><div class="notif-name">${esc(title)}</div><div class="notif-text">${esc(text)}</div></div>`;
   document.body.appendChild(n);
   setTimeout(()=>n.remove(),4000);
 
