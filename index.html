@@ -410,8 +410,8 @@ video { display:block; max-width:100%; max-height:100%; }
         <button class="ic-btn back-btn" id="back-btn" onclick="closeMobileChat()" title="Voltar" style="display:none">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
         </button>
-        <div class="chat-hd-av" id="ch-av"></div>
-        <div class="chat-hd-info">
+        <div class="chat-hd-av" id="ch-av" onclick="openChatHeaderInfo()" style="cursor:pointer"></div>
+        <div class="chat-hd-info" onclick="openChatHeaderInfo()" style="cursor:pointer">
           <div class="chat-hd-name" id="ch-name"></div>
           <div class="chat-hd-status" id="ch-status">online</div>
         </div>
@@ -517,6 +517,27 @@ video { display:block; max-width:100%; max-height:100%; }
 </div>
 
 <!-- MODAL EDITAR PERFIL -->
+<div class="modal-ov" id="contact-info-modal" onclick="if(event.target===this)closeContactInfo()">
+  <div class="modal profile-view-modal">
+    <button class="modal-x" onclick="closeContactInfo()">✕</button>
+    <div class="profile-view-header">
+      <div class="profile-view-av" id="cinfo-av-wrap"></div>
+      <div class="profile-view-name" id="cinfo-name"></div>
+      <div class="profile-view-email" id="cinfo-status"></div>
+    </div>
+    <div class="profile-menu-group">
+      <div class="profile-menu-item" style="cursor:default">
+        <div class="profile-menu-icon">✉️</div>
+        <div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--text2)">E-mail</div><div class="profile-menu-label" id="cinfo-email" style="word-break:break-all"></div></div>
+      </div>
+      <div class="profile-menu-item" style="cursor:default">
+        <div class="profile-menu-icon">📍</div>
+        <div style="flex:1;min-width:0"><div style="font-size:12px;color:var(--text2)">Localização</div><div class="profile-menu-label" id="cinfo-location"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-ov" id="profile-modal">
   <div class="modal profile-view-modal">
     <button class="modal-x" onclick="closeProfile()">✕</button>
@@ -551,6 +572,9 @@ video { display:block; max-width:100%; max-height:100%; }
     </div>
     <div class="avatar-label" style="margin-top:6px">Editar nome e foto</div>
     <input class="inp" id="p-name" type="text" placeholder="Seu nome">
+    <div class="avatar-label">Localização (seus contatos podem ver)</div>
+    <input class="inp" id="p-location" type="text" placeholder="Cidade, Estado" maxlength="60">
+    <button type="button" class="avatar-method-btn" id="p-loc-gps" onclick="fillLocationFromGPS()">📍 Usar minha localização atual</button>
     <div class="avatar-section">
       <div class="avatar-label">Foto de perfil</div>
       <div class="avatar-methods">
@@ -821,6 +845,7 @@ const VAPID_KEY='BN5F8ydEpYXauV2p4dJtT7eZv9OXLcy95yKfpjKcH29UF6Mn2J1qceLMNN_6pC2
 const DEFAULT_ICON='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4ac_3d.png';
 // URL do Worker da Cloudflare que envia o push com o app fechado (veja worker/ e o README).
 const PUSH_WORKER_URL='https://chatsapp-push.willbrasilia.workers.dev';
+let pushStatus='ainda não tentou', swError='', presenceUid=null;
 let appUnsubs=[], msgListenToken=0, swReg=null, fcmToken=null, fcmMessaging=null;
 // onValue/onChildAdded devolvem a função que cancela o listener; guardamos todas para
 // poder cancelar ao sair da conta (antes ficavam vivas e duplicavam eventos).
@@ -926,6 +951,47 @@ window.showProfile=()=>{
 
 window.closeProfile=()=>document.getElementById('profile-modal').classList.remove('on');
 
+// --- Perfil do contato (toque no nome/foto no topo da conversa) ---
+window.openChatHeaderInfo=()=>{
+  if(currentChatType==='group') return window.openGroupInfo&&window.openGroupInfo();
+  return window.openContactInfo();
+};
+window.openContactInfo=async()=>{
+  if(currentChatType!=='contact'||!currentContact)return;
+  const uid=currentContact.uid;
+  let c={...(contacts[uid]||{}),...currentContact};
+  try{ const sn=await get(ref(fbDb,`users/${uid}`)); if(sn.exists()) c={...c,...sn.val()}; }catch(e){}
+  const av=document.getElementById('cinfo-av-wrap'); av.innerHTML='';
+  if(c.photoData){ const img=document.createElement('img'); img.src=c.photoData; av.appendChild(img); av.style.background='transparent'; }
+  else{ av.textContent=c.emoji||'🦁'; av.style.background=c.color||'#FFA500'; }
+  document.getElementById('cinfo-name').textContent=c.name||'Familiar';
+  document.getElementById('cinfo-status').textContent=statusText(c);
+  document.getElementById('cinfo-email').textContent=c.email||'Não informado';
+  document.getElementById('cinfo-location').textContent=c.location||'Não informada';
+  document.getElementById('contact-info-modal').classList.add('on');
+};
+window.closeContactInfo=()=>document.getElementById('contact-info-modal').classList.remove('on');
+
+// Preenche "Cidade, Estado" a partir do GPS. Só o texto da cidade é salvo; as coordenadas são descartadas.
+window.fillLocationFromGPS=()=>{
+  const btn=document.getElementById('p-loc-gps'), err=document.getElementById('profile-err');
+  const reset=()=>{ btn.textContent='📍 Usar minha localização atual'; };
+  err.textContent='';
+  if(!navigator.geolocation){ err.textContent='Este navegador não oferece localização. Digite a cidade.'; return; }
+  btn.textContent='📍 Localizando...';
+  navigator.geolocation.getCurrentPosition(async(pos)=>{
+    try{
+      const {latitude,longitude}=pos.coords;
+      const r=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=pt`);
+      const j=await r.json();
+      const txt=[j.city||j.locality||'',j.principalSubdivision||''].filter(Boolean).join(', ');
+      if(!txt) throw new Error('vazio');
+      document.getElementById('p-location').value=txt;
+    }catch(e){ err.textContent='Não consegui descobrir a cidade. Digite manualmente.'; }
+    reset();
+  },()=>{ err.textContent='Localização não autorizada. Digite a cidade manualmente.'; reset(); },{timeout:10000,maximumAge:600000});
+};
+
 function renderProfileViewAvatar(){
   const av=document.getElementById('pv-av-wrap');
   av.innerHTML='';
@@ -943,6 +1009,7 @@ function renderProfileViewAvatar(){
 window.openAccountScreen=()=>{
   buildProfileEmojiGrid();
   document.getElementById('p-name').value=currentUser.displayName||'';
+  document.getElementById('p-location').value=currentUser.location||'';
   document.getElementById('profile-err').textContent='';
 
   // Reset visual dos painéis
@@ -995,14 +1062,15 @@ window.saveProfile=async()=>{
     name,
     emoji:profileAv.type==='emoji'?profileAv.emoji:(currentUser.emoji||'🦁'),
     color:profileAv.type==='emoji'?profileAv.color:(currentUser.color||'#FFA500'),
-    photoData:profileAv.type==='photo'?profileAv.photoData:null
+    photoData:profileAv.type==='photo'?profileAv.photoData:null,
+    location:document.getElementById('p-location').value.trim().slice(0,60)||null
   };
 
   try{
     await update(ref(fbDb,`users/${currentUser.uid}`),updates);
     await updateProfile(fbAuth.currentUser,{displayName:name});
 
-    currentUser={...currentUser,...updates};
+    currentUser={...currentUser,...updates,location:updates.location||''};
     document.getElementById('my-name').textContent=currentUser.displayName;
     renderMyAvatar(document.getElementById('my-av-wrap'));
     closeAccountScreen();
@@ -1533,6 +1601,38 @@ try{
 // =========================================================
 // AUTH STATE
 // =========================================================
+// ---- Presença: "online" = app visível e conectado. O .info/connected dispara a cada
+// (re)conexão, então o celular volta a aparecer online ao reabrir o app (antes o
+// status só era marcado uma vez, no login, e ficava offline para sempre depois).
+function setPresence(online){
+  if(!presenceUid||!fbDb)return;
+  update(ref(fbDb,`users/${presenceUid}`),{online,lastSeen:serverTimestamp()}).catch(()=>{});
+}
+function startPresence(uid){
+  presenceUid=uid;
+  trackedOnValue(ref(fbDb,'.info/connected'),(snap)=>{
+    if(snap.val()!==true)return;
+    onDisconnect(ref(fbDb,`users/${uid}`)).update({online:false,lastSeen:serverTimestamp()})
+      .then(()=>{ if(document.visibilityState==='visible') setPresence(true); }).catch(()=>{});
+  });
+}
+document.addEventListener('visibilitychange',()=>{ if(presenceUid) setPresence(document.visibilityState==='visible'); });
+window.addEventListener('pagehide',()=>{ if(presenceUid) setPresence(false); });
+window.addEventListener('pageshow',()=>{ if(presenceUid&&document.visibilityState==='visible') setPresence(true); });
+
+function statusText(c){
+  if(c&&c.online) return 'online';
+  const t=c&&c.lastSeen;
+  if(typeof t==='number'&&t>0){
+    const d=new Date(t), now=new Date();
+    const hm=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const dia=d.toDateString()===now.toDateString()?'hoje'
+      :d.toDateString()===new Date(now-864e5).toDateString()?'ontem':d.toLocaleDateString('pt-BR');
+    return `visto por último ${dia} às ${hm}`;
+  }
+  return 'offline';
+}
+
 async function onAuthChange(user){
   if(user){
     const snap=await get(ref(fbDb,`users/${user.uid}`));
@@ -1541,11 +1641,12 @@ async function onAuthChange(user){
       uid:user.uid, email:user.email,
       displayName:d.name||user.displayName||'Usuário',
       emoji:d.emoji||'🦁', color:d.color||'#FFA500',
-      photoData:d.photoData||null
+      photoData:d.photoData||null,
+      location:d.location||''
     };
-    await update(ref(fbDb,`users/${user.uid}`),{online:true,lastSeen:serverTimestamp()});
-    onDisconnect(ref(fbDb,`users/${user.uid}/online`)).set(false);
     showApp();
+    startPresence(user.uid);
+    if(new URLSearchParams(location.search).get('diag')==='1') setTimeout(()=>window.diagPush(),2500);
   }else{
     stopAppListeners();
     document.getElementById('app').classList.remove('on','show-chat');
@@ -1608,7 +1709,8 @@ window.doRegister=async()=>{
 
 window.doLogout=async()=>{
   try{ await unregisterPush(); }catch(e){}
-  if(currentUser) await update(ref(fbDb,`users/${currentUser.uid}`),{online:false});
+  if(currentUser) await update(ref(fbDb,`users/${currentUser.uid}`),{online:false,lastSeen:serverTimestamp()});
+  presenceUid=null;
   await signOut(fbAuth);
 };
 
@@ -1722,7 +1824,7 @@ async function initServiceWorker(){
     navigator.serviceWorker.addEventListener('message',(e)=>{
       if(e.data&&e.data.type==='open-chat') openChatByKey(e.data.key);
     });
-  }catch(e){ console.error('[SW]',e); }
+  }catch(e){ swError=String((e&&e.message)||e); console.error('[SW]',e); }
   return swReg;
 }
 
@@ -1730,24 +1832,71 @@ async function initServiceWorker(){
 // e a Cloud Function (functions/index.js) usa esses tokens quando chega mensagem nova.
 async function setupPush(){
   try{
-    if(!currentUser||!('Notification' in window)||Notification.permission!=='granted')return false;
+    if(!currentUser||!('Notification' in window)||Notification.permission!=='granted'){ pushStatus='sem permissão de notificação ('+(('Notification' in window)?Notification.permission:'navegador sem suporte')+')'; return false; }
     // limpa espaços, quebras de linha e aspas que costumam vir junto ao copiar do Console
     const vapid=String(VAPID_KEY||'').replace(/[\s"'`]/g,'');
-    if(!vapid||vapid.startsWith('COLE')){ console.warn('[Push] VAPID_KEY não configurada.'); return false; }
+    if(!vapid||vapid.startsWith('COLE')){ pushStatus='VAPID_KEY não configurada'; console.warn('[Push] VAPID_KEY não configurada.'); return false; }
     if(!/^[A-Za-z0-9_-]{87}$/.test(vapid)){
       console.error('[Push] VAPID_KEY inválida: tem '+vapid.length+' caracteres (o correto são 87, só letras, números, - e _). Copie de novo com o botão de copiar do Firebase Console.');
+      pushStatus='VAPID_KEY inválida ('+vapid.length+' caracteres)';
       return false;
     }
-    if(!(await fcmSupported()))return false;
-    const reg=await initServiceWorker(); if(!reg)return false;
+    if(!(await fcmSupported())){ pushStatus='este navegador não suporta push'; return false; }
+    const reg=await initServiceWorker(); if(!reg){ pushStatus='Service Worker não registrou: '+(swError||'sw.js ausente no site?'); return false; }
     fcmMessaging=fcmMessaging||getMessaging(fbApp);
     const token=await getToken(fcmMessaging,{vapidKey:vapid,serviceWorkerRegistration:reg});
-    if(!token)return false;
+    if(!token){ pushStatus='o Firebase não devolveu token'; return false; }
     fcmToken=token;
     await set(ref(fbDb,`fcm_tokens/${currentUser.uid}/${token}`),{ts:Date.now(),ua:navigator.userAgent.slice(0,120)});
     console.log('[Push] aparelho registrado para notificações em segundo plano.');
+    pushStatus='ok';
     return true;
-  }catch(e){ console.error('[Push] falha ao registrar:',e); return false; }
+  }catch(e){ pushStatus='erro: '+((e&&e.message)||e); console.error('[Push] falha ao registrar:',e); return false; }
+}
+
+// Diagnóstico: abra o app com ?diag=1 no endereço (ou rode diagPush() no console).
+window.diagPush=async()=>{
+  const L=[];
+  const ok=(t)=>L.push('✅ '+t), bad=(t)=>L.push('❌ '+t), info=(t)=>L.push('ℹ️ '+t);
+  info('Navegador: '+navigator.userAgent.slice(0,100));
+  const perm=('Notification' in window)?Notification.permission:'sem suporte';
+  perm==='granted'?ok('Permissão de notificação: concedida'):bad('Permissão de notificação: '+perm+' (libere nas configurações do site)');
+  await setupPush();
+  try{
+    const reg=await navigator.serviceWorker.getRegistration('./');
+    reg&&reg.active?ok('Service Worker ativo'):bad('Service Worker não está ativo'+(swError?': '+swError:''));
+  }catch(e){ bad('Service Worker: '+e.message); }
+  pushStatus==='ok'?ok('Aparelho registrado para push'):bad('Registro do push: '+pushStatus);
+  if(fcmToken){
+    try{
+      const sn=await get(ref(fbDb,`fcm_tokens/${currentUser.uid}/${fcmToken}`));
+      sn.exists()?ok('Token salvo no banco'):bad('Token não está no banco (confira as regras de fcm_tokens)');
+    }catch(e){ bad('Não consegui ler o token no banco: '+e.message); }
+  }
+  try{
+    const r=await fetch(PUSH_WORKER_URL);
+    r.ok?ok('Worker da Cloudflare respondeu'):bad('Worker respondeu com erro '+r.status);
+  }catch(e){ bad('Worker inacessível: '+e.message); }
+  showDiagOverlay(L);
+};
+function showDiagOverlay(lines){
+  const old=document.getElementById('diag-ov'); if(old)old.remove();
+  const o=document.createElement('div'); o.id='diag-ov';
+  o.style.cssText='position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px';
+  const box=document.createElement('div');
+  box.style.cssText='background:var(--bg-sidebar,#1f2c34);color:var(--text,#fff);border-radius:12px;padding:18px;max-width:440px;width:100%;max-height:85vh;overflow:auto;font-size:14px;line-height:1.6';
+  const h=document.createElement('h3'); h.textContent='Diagnóstico de notificações'; h.style.marginBottom='10px';
+  const body=document.createElement('div'); body.style.cssText='white-space:pre-wrap;word-break:break-word'; body.textContent=lines.join('\n');
+  const row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;margin-top:14px';
+  const mk=(t,fn)=>{ const b=document.createElement('button'); b.className='btn-primary'; b.textContent=t; b.onclick=fn; return b; };
+  row.appendChild(mk('🔔 Testar aviso neste aparelho',async()=>{
+    try{
+      const reg=swReg||await initServiceWorker();
+      await reg.showNotification('Teste do ChatsApp',{body:'Se você viu este aviso, o sistema está liberando notificações.',icon:DEFAULT_ICON,tag:'chatsapp-teste'});
+    }catch(e){ alert('Falhou: '+e.message); }
+  }));
+  row.appendChild(mk('Fechar',()=>o.remove()));
+  box.append(h,body,row); o.appendChild(box); document.body.appendChild(o);
 }
 
 async function unregisterPush(){
@@ -1838,7 +1987,7 @@ function loadContacts(){
         if(currentChatType==='contact'&&currentContact&&currentContact.uid===cid){
           const c=contacts[cid];
           currentContact={...currentContact,...c};
-          document.getElementById('ch-status').textContent=c.online?'online':'offline';
+          document.getElementById('ch-status').textContent=statusText(c);
           document.getElementById('ch-name').textContent=c.name||'Familiar';
           updateChatHeaderAvatar(c);
         }
@@ -2078,7 +2227,7 @@ function openChat(uid,c){
   document.getElementById('app').classList.add('show-chat');
   updateChatHeaderAvatar(c);
   document.getElementById('ch-name').textContent=c.name||'Familiar';
-  document.getElementById('ch-status').textContent=c.online?'online':'offline';
+  document.getElementById('ch-status').textContent=statusText(c);
   document.getElementById('ch-aud-btn').style.display='';
   document.getElementById('ch-vid-btn').style.display='';
   document.getElementById('ch-group-info-btn').style.display='none';
@@ -2933,7 +3082,11 @@ function listenNotifications(){
 
     // Só exibe o toast e incrementa não lidas se o usuário NÃO está já
     // nesse chat — se estiver olhando para ele, as mensagens são lidas na hora.
-    if(!currentContact||senderKey!==expectedKey){
+    const chatOpen=!!currentContact&&senderKey===expectedKey;
+    const attentive=document.visibilityState==='visible'&&document.hasFocus();
+    // Chat aberto, mas janela minimizada ou em segundo plano: avisa (sem contar como não lida).
+    if(chatOpen&&!attentive) showNotif(d,d.name,d.text,'chat-'+senderKey);
+    if(!chatOpen){
       showNotif(d,d.name,d.text,'chat-'+senderKey);
       // Incrementa contador de não lidas na entrada correspondente da sidebar
       if(isGroup){
