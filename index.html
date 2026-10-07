@@ -557,11 +557,6 @@ video { display:block; max-width:100%; max-height:100%; }
         <div class="profile-menu-label">Privacidade</div>
         <div class="profile-menu-arrow">›</div>
       </div>
-      <div class="profile-menu-item" onclick="closeProfile();diagPush()">
-        <div class="profile-menu-icon">🔔</div>
-        <div class="profile-menu-label">Notificações (diagnóstico)</div>
-        <div class="profile-menu-arrow">›</div>
-      </div>
     </div>
   </div>
 </div>
@@ -1911,11 +1906,6 @@ window.diagPush=async()=>{
     }catch(e){ bad('Não consegui ler o token no banco: '+e.message); }
   }
   try{
-    const all=await get(ref(fbDb,`fcm_tokens/${currentUser.uid}`));
-    info('Aparelhos registrados na sua conta: '+(all.exists()?Object.keys(all.val()).length:0));
-  }catch(e){}
-  info('Janela: '+(document.visibilityState==='visible'?'visível':'oculta')+' · '+(document.hasFocus()?'com foco':'sem foco'));
-  try{
     const r=await fetch(PUSH_WORKER_URL);
     r.ok?ok('Worker da Cloudflare respondeu'):bad('Worker respondeu com erro '+r.status);
   }catch(e){ bad('Worker inacessível: '+e.message); }
@@ -3221,26 +3211,13 @@ function showNotif(sender,title,text,tag){
   // API está disponível e autorizada (Chrome/Edge desktop, PWA instalado).
   // A mesma tag do Service Worker faz o push e este aviso se fundirem em um só.
   if(!document.hasFocus()&&'Notification' in window&&Notification.permission==='granted'){
-    const opts={body:text,icon:DEFAULT_ICON,badge:DEFAULT_ICON,
+    const opts={body:text,icon:sender?.photoData||DEFAULT_ICON,badge:DEFAULT_ICON,
       tag:tag||'chatsapp-msg',data:{key:(tag||'').replace(/^(chat|call)-/,''),ts:Date.now()}};
-    const isCall=(tag||'').startsWith('call-');
-    if(isCall){ opts.requireInteraction=true; opts.vibrate=[300,150,300,150,300]; }
-    (async()=>{
-      try{
-        if(swReg&&swReg.showNotification){
-          // Mesma tag substitui o aviso antigo em silêncio (Windows); renotify faz o aviso aparecer de novo.
-          // Se o push acabou de mostrar este mesmo aviso, só substitui, sem alertar duas vezes.
-          let renotify=true;
-          try{
-            const ex=await swReg.getNotifications({tag:opts.tag});
-            renotify=isCall||!ex.some(n=>n.data&&n.data.ts&&Date.now()-n.data.ts<8000);
-          }catch(e){}
-          await swReg.showNotification(title,{...opts,renotify});
-        }else{
-          const o=new Notification(title,opts); o.onclick=()=>{window.focus();o.close();};
-        }
-      }catch(e){ console.error('Erro ao exibir notificação do sistema:',e); }
-    })();
+    if((tag||'').startsWith('call-')){ opts.requireInteraction=true; opts.renotify=true; opts.vibrate=[300,150,300,150,300]; }
+    try{
+      if(swReg&&swReg.showNotification) swReg.showNotification(title,opts);
+      else{ const o=new Notification(title,opts); o.onclick=()=>{window.focus();o.close();}; }
+    }catch(e){ console.error('Erro ao exibir notificação do sistema:',e); }
   }
 }
 
