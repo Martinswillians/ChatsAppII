@@ -1659,6 +1659,12 @@ async function backfillLastMsgs(cids){
   backfillRunning=false;
 }
 
+// Fecha o aviso de chamada do sistema (atendeu, recusou ou quem ligou desistiu).
+function closeCallNotif(fromId){
+  if(!fromId||!swReg||!swReg.getNotifications)return;
+  swReg.getNotifications({tag:'call-'+fromId}).then(a=>a.forEach(n=>n.close())).catch(()=>{});
+}
+
 async function onAuthChange(user){
   if(user){
     const snap=await get(ref(fbDb,`users/${user.uid}`));
@@ -1830,13 +1836,13 @@ function requestNotificationPermission(){
 // ---------- Push em segundo plano (FCM + Service Worker) ----------
 // Avisa o Worker de que há mensagem nova; ele envia o push aos aparelhos dos destinatários.
 // Não bloqueia o envio da mensagem: se falhar, o chat funciona normalmente.
-async function pushNotify(toUids,key,title,body){
+async function pushNotify(toUids,key,title,body,extra){
   try{
     if(!PUSH_WORKER_URL||PUSH_WORKER_URL.startsWith('COLE')||!toUids.length||!fbAuth?.currentUser)return;
     const idToken=await fbAuth.currentUser.getIdToken();
     const r=await fetch(PUSH_WORKER_URL,{method:'POST',
       headers:{'Content-Type':'application/json',Authorization:'Bearer '+idToken},
-      body:JSON.stringify({toUids,key,title,body})});
+      body:JSON.stringify({toUids,key,title,body,...(extra||{})})});
     if(!r.ok)console.warn('[Push] Worker respondeu',r.status,await r.text().catch(()=>''));
   }catch(e){ console.warn('[Push] não consegui avisar o Worker:',e); }
 }
@@ -3206,7 +3212,8 @@ function showNotif(sender,title,text,tag){
   // A mesma tag do Service Worker faz o push e este aviso se fundirem em um só.
   if(!document.hasFocus()&&'Notification' in window&&Notification.permission==='granted'){
     const opts={body:text,icon:sender?.photoData||DEFAULT_ICON,badge:DEFAULT_ICON,
-      tag:tag||'chatsapp-msg',data:{key:(tag||'').replace(/^chat-/,''),ts:Date.now()}};
+      tag:tag||'chatsapp-msg',data:{key:(tag||'').replace(/^(chat|call)-/,''),ts:Date.now()}};
+    if((tag||'').startsWith('call-')){ opts.requireInteraction=true; opts.renotify=true; opts.vibrate=[300,150,300,150,300]; }
     try{
       if(swReg&&swReg.showNotification) swReg.showNotification(title,opts);
       else{ const o=new Notification(title,opts); o.onclick=()=>{window.focus();o.close();}; }
@@ -3424,9 +3431,12 @@ window.startCall=async(callType)=>{
     emoji:currentUser.emoji,color:currentUser.color,photoData:currentUser.photoData||null,
     callType,ts:Date.now()
   });
+  // Push para o aparelho da outra pessoa tocar mesmo com o app fechado
+  pushNotify([callPartnerId],currentUser.uid,currentUser.displayName,'',{kind:'call',callType});
 };
 
 window.endCall=async(remoteInitiated)=>{
+  const wasCaller=isCaller, wasConnected=!!callTimer, wasAudio=isAudioCall;
   document.getElementById('vc').classList.remove('on','audio-mode');
   document.getElementById('remoteVideo').srcObject=null;
   document.getElementById('remoteVideo').style.display='none';
@@ -3441,6 +3451,12 @@ window.endCall=async(remoteInitiated)=>{
   }
   if(unsubSignal){unsubSignal();unsubSignal=null;}
   if(currentUser) await remove(ref(fbDb,`calls/${currentUser.uid}`));
+  // Quem liga também apaga o pedido de chamada que deixou para o outro lado; antes ele ficava
+  // no banco e voltava como "chamada fantasma" quando o outro abria o app.
+  if(wasCaller&&partner&&!remoteInitiated){
+    try{ await remove(ref(fbDb,`calls/${partner}`)); }catch(e){}
+    if(!wasConnected) pushNotify([partner],currentUser.uid,currentUser.displayName,'',{kind:'call-end',callType:wasAudio?'audio':'video'});
+  }
   if(partner){
     // Pequena espera para garantir que o sinal de hangup chegue ao outro lado
     // antes de remover os nós de sinalização (que incluem o próprio hangup)
@@ -3511,9 +3527,17 @@ function listenCalls(){
   if(!currentUser)return;
   const cRef=ref(fbDb,`calls/${currentUser.uid}`);
   trackedOnValue(cRef,async(snap)=>{
-    if(!snap.exists())return;
-    if(document.getElementById('vc').classList.contains('on'))return;
+    const vcOn=document.getElementById('vc').classList.contains('on');
+    if(!snap.exists()){
+      // Quem ligou desistiu (ou outro aparelho atendeu): fecha a tela de chamada recebida e o aviso.
+      const incEl=document.getElementById('inc');
+      if(!vcOn&&incEl.classList.contains('on')){ incEl.classList.remove('on'); closeCallNotif(incEl.dataset.fromId); }
+      return;
+    }
+    if(vcOn)return;
     const d=snap.val();
+    // Pedido de chamada velho (ninguém atendeu e ficou esquecido no banco): descarta.
+    if(Date.now()-(Number(d.ts)||0)>120000){ remove(ref(fbDb,`calls/${currentUser.uid}`)).catch(()=>{}); return; }
     // Lista restrita: rejeita automaticamente chamadas de UIDs não permitidos
     if(!isUidAllowed(d.from)){
       await remove(ref(fbDb,`calls/${currentUser.uid}`));
@@ -3539,12 +3563,17 @@ function listenCalls(){
     inc.dataset.fromColor=d.color||'#555';
     inc.dataset.fromPhoto=d.photoData||'';
     inc.dataset.callType=callType;
+    // Janela minimizada/em segundo plano: aviso do sistema (mesma tag do push, então não duplica)
+    if(!document.hasFocus()){
+      showNotif(d,callType==='audio'?'📞 Chamada de áudio':'📹 Videochamada',`${d.fromName||'Alguém'} está te chamando`,'call-'+d.from);
+    }
   });
 }
 
 window.rejectCall=async()=>{
   const inc=document.getElementById('inc');
   const fromId=inc.dataset.fromId;
+  closeCallNotif(fromId);
   inc.classList.remove('on');
   if(fromId&&currentUser){
     await remove(ref(fbDb,`calls/${currentUser.uid}`));
@@ -3555,6 +3584,7 @@ window.rejectCall=async()=>{
 window.acceptCall=async()=>{
   const inc=document.getElementById('inc');
   const fromId=inc.dataset.fromId;
+  closeCallNotif(fromId);
   const fromName=inc.dataset.fromName;
   const fromEmoji=inc.dataset.fromEmoji;
   const fromColor=inc.dataset.fromColor;

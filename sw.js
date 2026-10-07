@@ -14,12 +14,34 @@ self.addEventListener('push',(event)=>{
     let p={};
     try{ p=event.data?event.data.json():{}; }catch(e){ p={data:{body:event.data&&event.data.text()}}; }
     const d=p.data||p.notification||p;
+    const kind=d.kind||'message';
+    const tag=d.tag||'chatsapp';
 
-    // App aberto e visível: o próprio app já avisa (toast + som), não duplica.
+    // Quem ligou desistiu antes de atender: some o aviso de "chamada tocando".
+    if(kind==='call-end'){
+      (await self.registration.getNotifications({tag})).forEach(n=>n.close());
+    }
+
+    // App aberto e visível: o próprio app já avisa (toast, tela de chamada), não duplica.
     const wins=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     if(wins.some(c=>c.visibilityState==='visible'))return;
 
-    const tag=d.tag||'chatsapp';
+    if(kind==='call'){
+      await self.registration.showNotification(d.title||'Chamada',{
+        body:d.body||'Chamada recebida',icon:ICON,badge:ICON,tag,renotify:true,
+        requireInteraction:true,vibrate:[300,150,300,150,300,150,300],
+        data:{key:d.key||'',ts:Date.now(),kind}
+      });
+      return;
+    }
+    if(kind==='call-end'){
+      await self.registration.showNotification(d.title||'Chamada perdida',{
+        body:d.body||'',icon:ICON,badge:ICON,tag:'missed-'+(d.key||''),
+        data:{key:d.key||'',ts:Date.now(),kind}
+      });
+      return;
+    }
+
     // Se o app acabou de mostrar este mesmo aviso, só substitui em silêncio.
     const recent=(await self.registration.getNotifications({tag}))
       .some(n=>n.data&&n.data.ts&&Date.now()-n.data.ts<10000);
