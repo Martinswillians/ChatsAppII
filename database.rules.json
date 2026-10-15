@@ -7,67 +7,75 @@
       }
     },
     "email_index": {
-      ".read": "auth != null",
-      ".write": "auth != null"
+      "$ekey": {
+        ".read": "auth != null",
+        ".write": "auth != null && newData.val() == auth.uid && (!data.exists() || data.val() == auth.uid)"
+      }
     },
     "contact_requests": {
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null"
+        "$sender": {
+          ".write": "auth != null && (auth.uid == $sender || auth.uid == $uid)"
+        }
       }
     },
     "groups": {
       "$gid": {
-        ".read": "auth != null",
+        ".read": "auth != null && (data.child('members').child(auth.uid).exists() || data.child('createdBy').val() == auth.uid)",
         ".write": "auth != null && ((!data.exists() && newData.child('createdBy').val() == auth.uid) || (data.exists() && (data.child('createdBy').val() == auth.uid || data.child('members').child(auth.uid).exists())))"
       }
     },
     "group_invites": {
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null"
+        "$gid": {
+          ".write": "auth != null && (auth.uid == $uid || root.child('groups').child($gid).child('createdBy').val() == auth.uid || root.child('groups').child($gid).child('admins').child(auth.uid).exists())"
+        }
       }
     },
     "messages": {
       "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
+        ".read": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid) || ($chatId.beginsWith('group_') && root.child('groups').child($chatId.replace('group_', '')).child('members').child(auth.uid).exists()))",
+        ".write": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid) || ($chatId.beginsWith('group_') && root.child('groups').child($chatId.replace('group_', '')).child('members').child(auth.uid).exists()) || (!newData.exists() && $chatId.beginsWith('group_') && !root.child('groups').child($chatId.replace('group_', '')).exists()))"
+      }
+    },
+    "typing": {
+      "$chatId": {
+        ".read": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid) || ($chatId.beginsWith('group_') && root.child('groups').child($chatId.replace('group_', '')).child('members').child(auth.uid).exists()))",
+        ".write": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid) || ($chatId.beginsWith('group_') && root.child('groups').child($chatId.replace('group_', '')).child('members').child(auth.uid).exists()))"
       }
     },
     "notifications": {
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null"
+        "$key": {
+          ".write": "auth != null && (auth.uid == $uid || $key == auth.uid || ($key.beginsWith('group_') && root.child('groups').child($key.replace('group_', '')).child('members').child(auth.uid).exists()))"
+        }
       }
     },
     "calls": {
       "$uid": {
-        ".read": "auth != null",
-        ".write": "auth != null"
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && (auth.uid == $uid || newData.child('from').val() == auth.uid || (!newData.exists() && data.child('from').val() == auth.uid))"
       }
     },
     "call_hangup": {
       "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
+        ".read": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))",
+        ".write": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))"
       }
     },
     "signaling": {
       "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
+        ".read": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))",
+        ".write": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid))"
       }
     },
     "fcm_tokens": {
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
         ".write": "auth != null && auth.uid == $uid"
-      }
-    },
-    "typing": {
-      "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null"
       }
     }
   }
