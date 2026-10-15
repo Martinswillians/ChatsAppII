@@ -77,6 +77,12 @@
         ".read": "auth != null && auth.uid == $uid",
         ".write": "auth != null && auth.uid == $uid"
       }
+    },
+    "media": {
+      "$chatId": {
+        ".read": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid) || ($chatId.beginsWith('group_') && root.child('groups').child($chatId.replace('group_', '')).child('members').child(auth.uid).exists()))",
+        ".write": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid) || ($chatId.beginsWith('group_') && root.child('groups').child($chatId.replace('group_', '')).child('members').child(auth.uid).exists()) || (!newData.exists() && $chatId.beginsWith('group_') && !root.child('groups').child($chatId.replace('group_', '')).exists()))"
+      }
     }
   }
 }

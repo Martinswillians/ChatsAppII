@@ -9,6 +9,13 @@ self.addEventListener('activate',(e)=>e.waitUntil((async()=>{
 })()));
 self.addEventListener('fetch',()=>{}); // necessário para o app ser instalável (PWA)
 
+async function updateBadge(){
+  try{
+    const n=(await self.registration.getNotifications()).length;
+    if(self.navigator&&self.navigator.setAppBadge){ if(n>0)await self.navigator.setAppBadge(n); else await self.navigator.clearAppBadge(); }
+  }catch(e){}
+}
+
 self.addEventListener('push',(event)=>{
   event.waitUntil((async()=>{
     let p={};
@@ -30,8 +37,10 @@ self.addEventListener('push',(event)=>{
       await self.registration.showNotification(d.title||'Chamada',{
         body:d.body||'Chamada recebida',icon:ICON,badge:ICON,tag,renotify:true,
         requireInteraction:true,vibrate:[300,150,300,150,300,150,300],
+        actions:[{action:'answer',title:'Atender'},{action:'reject',title:'Recusar'}],
         data:{key:d.key||'',ts:Date.now(),kind}
       });
+      await updateBadge();
       return;
     }
     if(kind==='call-end'){
@@ -39,6 +48,7 @@ self.addEventListener('push',(event)=>{
         body:d.body||'',icon:ICON,badge:ICON,tag:'missed-'+(d.key||''),
         data:{key:d.key||'',ts:Date.now(),kind}
       });
+      await updateBadge();
       return;
     }
 
@@ -49,17 +59,33 @@ self.addEventListener('push',(event)=>{
       body:d.body||'Nova mensagem',icon:ICON,badge:ICON,tag,renotify:!recent,
       vibrate:[120,60,120],data:{key:d.key||'',ts:Date.now()}
     });
+    await updateBadge();
   })());
 });
 
 self.addEventListener('notificationclick',(event)=>{
   event.notification.close();
-  const key=(event.notification.data&&event.notification.data.key)||'';
+  const nd=event.notification.data||{};
+  const key=nd.key||'';
+  const action=event.action; // 'answer' | 'reject' | '' (toque no corpo da notificação)
   event.waitUntil((async()=>{
+    await updateBadge();
     const wins=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    if(nd.kind==='call'&&(action==='answer'||action==='reject')){
+      // o login do Firebase só existe dentro do app: ele é quem atende/recusa
+      if(wins.length){
+        const c=wins[0];
+        if(action==='answer'&&'focus' in c)await c.focus();
+        c.postMessage({type:'call-action',action,key});
+        return;
+      }
+      await self.clients.openWindow('./?callaction='+action);
+      return;
+    }
     for(const c of wins){
       if('focus' in c){ await c.focus(); if(key)c.postMessage({type:'open-chat',key}); return; }
     }
     await self.clients.openWindow(key?'./?chat='+encodeURIComponent(key):'./');
   })());
 });
+self.addEventListener('notificationclose',(event)=>{ event.waitUntil(updateBadge()); });
