@@ -212,6 +212,28 @@ async function linkPreview(rawUrl) {
   return { ok: true, url: res.url || u.toString(), title: title.slice(0, 200), description: description.slice(0, 300), image: image.slice(0, 500), site: site.slice(0, 80) };
 }
 
+// Busca de GIFs no Giphy (a chave fica só aqui, no secret GIPHY_API_KEY; só GIFs livres para todos os públicos)
+async function searchGifs(env, q) {
+  if (!env.GIPHY_API_KEY) return { ok: false, error: 'sem_chave' };
+  q = String(q || '').trim().slice(0, 60);
+  const base = q ? 'https://api.giphy.com/v1/gifs/search' : 'https://api.giphy.com/v1/gifs/trending';
+  const u = new URL(base);
+  u.searchParams.set('api_key', env.GIPHY_API_KEY);
+  u.searchParams.set('limit', '24');
+  u.searchParams.set('rating', 'g');
+  u.searchParams.set('lang', 'pt');
+  if (q) u.searchParams.set('q', q);
+  const r = await fetch(u.toString(), { cf: { cacheTtl: 300 } });
+  if (!r.ok) return { ok: false, error: 'giphy_' + r.status };
+  const j = await r.json();
+  const gifs = (j.data || []).map((g) => {
+    const f = (g.images && g.images.fixed_width) || {};
+    const sm = (g.images && g.images.fixed_width_small) || f;
+    return { url: f.url, preview: sm.url, w: +f.width || 200, h: +f.height || 150 };
+  }).filter((g) => /^https:\/\/media\d*\.giphy\.com\//.test(g.url || ''));
+  return { ok: true, gifs };
+}
+
 export default {
   async fetch(req, env) {
     const origin = env.ALLOWED_ORIGIN || DEFAULT_ORIGIN;
@@ -241,6 +263,7 @@ export default {
       const body = await req.json().catch(() => null);
       if (!body) return json({ ok: false, error: 'corpo inválido' }, 400, cors);
       if (new URL(req.url).pathname.replace(/\/+$/, '') === '/preview') return json(await linkPreview(body.url), 200, cors);
+      if (new URL(req.url).pathname.replace(/\/+$/, '') === '/gifs') return json(await searchGifs(env, body.q), 200, cors);
       const kind = ['message', 'call', 'call-end'].includes(body.kind) ? body.kind : 'message';
       const callType = body.callType === 'audio' ? 'audio' : 'video';
       const isTest = body.test === true; // diagnóstico: manda um push para os próprios aparelhos

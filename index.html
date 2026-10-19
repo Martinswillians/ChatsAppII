@@ -410,6 +410,53 @@ video { display:block; max-width:100%; max-height:100%; }
   .vc-ctrl { padding:8px; gap:8px; }
   .c-btn { width:42px;height:42px;font-size:17px; }
 }
+
+/* BLOCO 5 */
+.attach-menu,.gif-panel{display:none;position:absolute;bottom:68px;left:14px;background:var(--bg-sidebar);border:1px solid var(--border);border-radius:12px;z-index:110;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.attach-menu.on{display:flex;flex-direction:column;padding:6px;min-width:190px}
+.attach-menu button{background:none;border:none;color:var(--text);text-align:left;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:14px;display:flex;gap:10px;align-items:center}
+.attach-menu button:hover{background:var(--hover)}
+.gif-panel.on{display:flex;flex-direction:column;width:min(340px,calc(100vw - 28px));height:320px;padding:8px;gap:6px}
+.gif-panel input{margin:0}
+.gif-grid{flex:1;overflow-y:auto;columns:2;column-gap:6px}
+.gif-grid img{width:100%;margin-bottom:6px;border-radius:8px;cursor:pointer;display:block;background:var(--hover)}
+.gif-msg{color:var(--text2);font-size:13px;padding:12px;column-span:all}
+.gif-credit{font-size:10px;color:var(--text2);text-align:right}
+.msg-gif{position:relative;line-height:0}.msg-gif img{border-radius:8px;max-width:100%;height:auto}
+.msg-gif span{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;line-height:1;padding:3px 5px;border-radius:4px}
+.poll-q{font-weight:600;margin-bottom:6px}.poll-sub{font-size:11px;color:var(--text2);margin-bottom:6px}
+.poll-opt{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin:4px 0;cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-size:14px;min-width:200px}
+.poll-opt.mine{border-color:var(--primary)}
+.poll-bar{position:absolute;left:0;top:0;bottom:0;background:var(--primary);opacity:.22;transition:width .3s}
+.poll-label,.poll-n{position:relative}.poll-total{font-size:11px;color:var(--text2);margin-top:4px}
+.msg-loc{display:block;text-decoration:none;color:inherit;width:260px;max-width:100%}
+.loc-map{position:relative;width:260px;max-width:100%;height:150px;overflow:hidden;border-radius:8px;background:#dfe7dd}
+.loc-map img{position:absolute;width:256px;height:256px;max-width:none}
+.loc-pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);font-size:28px;line-height:1}
+.loc-info{display:flex;flex-direction:column;gap:2px;padding:6px 2px 0;font-size:13px}.loc-info small{color:var(--text2);font-size:10px}
+.msg-contact{display:flex;align-items:center;gap:10px;min-width:220px}.mc-info{flex:1;display:flex;flex-direction:column;font-size:14px}.mc-info small{color:var(--text2)}
+.mc-btn{background:var(--primary);color:#fff;border:none;border-radius:14px;padding:6px 12px;cursor:pointer;font-size:12px}
+.msg-sys{align-self:center;max-width:86%;text-align:center;font-size:12px;color:var(--text2);background:var(--bg-sidebar);border:1px solid var(--border);padding:5px 12px;border-radius:12px;margin:4px 0}
+.msg-exp{font-size:10px;color:var(--text2);margin-right:4px}
+.ch-ttl{flex:0 0 auto;display:none;background:var(--bg-sidebar);color:var(--text2);font-size:12px;padding:4px 14px;border-bottom:1px solid var(--border)}
+.gcall-banner{flex:0 0 auto;display:none;align-items:center;gap:10px;background:var(--primary);color:#fff;padding:8px 14px;font-size:13px}
+.gcall-banner span{flex:1}.gcall-banner button{background:#fff;color:#075E54;border:none;border-radius:14px;padding:6px 14px;font-weight:600;cursor:pointer}
+.gcall-banner button:disabled{opacity:.6}
+#gc{display:none;position:fixed;inset:0;background:#000;z-index:2001;flex-direction:column}
+#gc.on{display:flex}
+.gc-top{display:flex;justify-content:center;gap:12px;color:#fff;font-size:14px;padding:10px;background:rgba(0,0,0,.6)}
+.gc-grid{flex:1;min-height:0;display:grid;gap:6px;padding:6px;grid-template-columns:1fr;grid-auto-rows:1fr}
+.gc-grid[data-n="2"],.gc-grid[data-n="3"],.gc-grid[data-n="4"]{grid-template-columns:1fr 1fr}
+.gc-tile{position:relative;background:#1b1b1b;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:0}
+.gc-tile video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+.gc-tile.has-video video{display:block}.gc-tile.has-video .gc-av{display:none}
+.gc-av{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;overflow:hidden}.gc-av img{width:100%;height:100%;object-fit:cover}
+.gc-nm{position:absolute;left:8px;bottom:6px;color:#fff;font-size:12px;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:10px}
+.gc-st{position:absolute;right:8px;top:6px;color:#fff;font-size:11px;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:10px;empty-cells:hide}
+.gc-st:empty{display:none}
+#remoteVideo.screen{object-fit:contain;background:#000}
+.c-screen{background:#374151;color:#fff}
+@media(max-width:600px){.gc-grid[data-n="3"],.gc-grid[data-n="4"],.gc-grid[data-n="2"]{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -525,7 +572,7 @@ video { display:block; max-width:100%; max-height:100%; }
         <button class="aud-btn" id="ch-aud-btn" onclick="startCall('audio')" title="Chamada de áudio">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
         </button>
-        <button class="vid-btn" id="ch-vid-btn" onclick="startCall('video')">
+        <button class="vid-btn" id="ch-vid-btn" onclick="startCall('video')" title="Videochamada">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
           Videochamada
         </button>
@@ -539,6 +586,8 @@ video { display:block; max-width:100%; max-height:100%; }
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
         </button>
       </div>
+      <div class="ch-ttl" id="ch-ttl"></div>
+      <div class="gcall-banner" id="gcall-banner"><span id="gcall-banner-txt"></span><button id="gcall-join" onclick="joinGcFromBanner()">Entrar</button></div>
       <div class="msg-search-bar" id="msg-search-bar">
         <input id="msg-search-inp" placeholder="Buscar na conversa" oninput="runMsgSearch()" onkeydown="if(event.key==='Enter'){event.preventDefault();stepMsgSearch(event.shiftKey?1:-1)}else if(event.key==='Escape')closeMsgSearch()">
         <span id="msg-search-count"></span>
@@ -580,7 +629,19 @@ video { display:block; max-width:100%; max-height:100%; }
           <div class="sticker-grid" id="sticker-grid"></div>
         </div>
         <input type="file" id="file-input" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none" onchange="handleFileSelect(event)">
-        <button class="att-btn" onclick="document.getElementById('file-input').click()" title="Anexar arquivo">
+        <div class="attach-menu" id="attach-menu">
+          <button onclick="pickAttach('file')">📎 Foto ou arquivo</button>
+          <button onclick="pickAttach('gif')">🎞️ GIF</button>
+          <button onclick="pickAttach('poll')">📊 Enquete</button>
+          <button onclick="pickAttach('loc')">📍 Localização</button>
+          <button onclick="pickAttach('contact')">👤 Contato</button>
+        </div>
+        <div class="gif-panel" id="gif-panel">
+          <input class="inp" id="gif-q" placeholder="Buscar GIFs" oninput="onGifInput()">
+          <div class="gif-grid" id="gif-grid"></div>
+          <div class="gif-credit">Powered by GIPHY</div>
+        </div>
+        <button class="att-btn" onclick="event.stopPropagation();toggleAttachMenu()" title="Anexar">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
         </button>
         <button class="att-btn" onclick="toggleStickerPanel()" title="Figurinhas">
@@ -829,6 +890,7 @@ video { display:block; max-width:100%; max-height:100%; }
   <div class="modal msg-context-menu">
     <div class="profile-menu-item" onclick="togglePref('pin')"><div class="profile-menu-icon">📌</div><div class="profile-menu-label" id="cm-pin"></div></div>
     <div class="profile-menu-item" onclick="togglePref('mute')"><div class="profile-menu-icon">🔇</div><div class="profile-menu-label" id="cm-mute"></div></div>
+    <div class="profile-menu-item" onclick="openTtlPicker()"><div class="profile-menu-icon">⏳</div><div class="profile-menu-label">Mensagens temporárias</div></div>
     <div class="profile-menu-item" onclick="openWallpaperPicker()"><div class="profile-menu-icon">🖼️</div><div class="profile-menu-label">Papel de parede</div></div>
     <div class="profile-menu-item" onclick="togglePref('arch')"><div class="profile-menu-icon">🗄️</div><div class="profile-menu-label" id="cm-arch"></div></div>
     <button class="avatar-method-btn" style="width:100%;margin-top:4px" onclick="closeConvMenu()">Cancelar</button>
@@ -934,9 +996,55 @@ video { display:block; max-width:100%; max-height:100%; }
     <button class="c-btn c-end" onclick="endCall()">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
     </button>
+    <button class="c-btn c-screen" id="b-screen" onclick="toggleScreenShare()" title="Compartilhar tela" style="display:none">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
+    </button>
     <button class="c-btn c-cam" id="b-cam" onclick="toggleCam()" title="Câmera">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
     </button>
+  </div>
+</div>
+
+<!-- ENQUETE -->
+<div class="modal-ov" id="poll-modal">
+  <div class="modal">
+    <button class="modal-x" onclick="closePollModal()">✕</button>
+    <h3>📊 Nova enquete</h3>
+    <input class="inp" id="poll-q" maxlength="120" placeholder="Pergunta">
+    <div id="poll-opts" style="display:flex;flex-direction:column;gap:6px;margin-top:8px"></div>
+    <button class="avatar-method-btn" id="poll-add" style="width:100%;margin-top:6px" onclick="addPollOption()">+ Adicionar opção</button>
+    <label class="fwd-item"><input type="checkbox" id="poll-multi"> <span>Permitir várias respostas</span></label>
+    <div class="err" id="poll-err"></div>
+    <button class="btn-primary" onclick="sendPoll()">Enviar enquete</button>
+  </div>
+</div>
+<!-- ESCOLHER CONTATO -->
+<div class="modal-ov" id="cpick-modal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeContactPicker()">✕</button>
+    <h3>👤 Compartilhar contato</h3>
+    <div id="cpick-list" style="max-height:50vh;overflow-y:auto"></div>
+  </div>
+</div>
+<!-- MENSAGENS TEMPORÁRIAS -->
+<div class="modal-ov" id="ttl-modal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeTtlPicker()">✕</button>
+    <h3>⏳ Mensagens temporárias</h3>
+    <p style="font-size:12px;color:var(--text2);margin:0 0 8px">As novas mensagens somem da conversa (e do banco) depois do prazo escolhido. Mensagens antigas não são afetadas.</p>
+    <div id="ttl-list"></div>
+    <button class="btn-primary" onclick="saveTtl()">Salvar</button>
+  </div>
+</div>
+<!-- CHAMADA EM GRUPO -->
+<div id="gc">
+  <div class="gc-top"><b id="gc-title"></b><span id="gc-timer" style="font-family:monospace">00:00</span></div>
+  <div class="gc-grid" id="gc-grid"></div>
+  <div class="vc-ctrl">
+    <button class="c-btn c-mute" id="gc-b-mute" onclick="gcToggleMute()" title="Microfone"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93H2c0 4.42 3.39 8.07 7.78 8.72L10 17.93V21h4v-3.07l.22.01C18.61 17.07 22 13.42 22 9h-2c0 4.08-3.06 7.44-7 7.93V16h-2v-.07z"/></svg></button>
+    <button class="c-btn c-screen" id="gc-b-screen" onclick="gcToggleScreen()" title="Compartilhar tela"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg></button>
+    <button class="c-btn c-end" onclick="leaveGroupCall()" title="Sair da chamada"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg></button>
+    <button class="c-btn c-cam" id="gc-b-cam" onclick="gcToggleCam()" title="Câmera"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></button>
   </div>
 </div>
 
@@ -1944,7 +2052,7 @@ function stopAppListeners(){
   try{ if(unsubMsgs)unsubMsgs(); }catch(e){} unsubMsgs=null;
   try{ if(unsubTyping)unsubTyping(); }catch(e){} unsubTyping=null;
   msgListenToken++;
-  contacts={}; groups={}; currentContact=null; prefs={}; userCache={}; showArchived=false; histState={path:'',oldest:null,hasMore:false,loading:false,initial:0}; stopRingtone(); setAppBadge(0); msgDataMap.clear(); closeMsgSearch();
+  contacts={}; groups={}; currentContact=null; prefs={}; userCache={}; showArchived=false; histState={path:'',oldest:null,hasMore:false,loading:false,initial:0}; stopRingtone(); setAppBadge(0); msgDataMap.clear(); closeMsgSearch(); try{gcWatchUnsubs.forEach(u=>u());gcWatchUnsubs=[];if(unsubTtl){unsubTtl();unsubTtl=null;}if(gc)leaveGroupCall();}catch(e){}
   const m=document.getElementById('msgs'); if(m)m.innerHTML='';
   document.getElementById('chat-view')?.classList.remove('on');
   const es=document.getElementById('empty-st'); if(es)es.style.display='';
@@ -2544,8 +2652,8 @@ function openGroupChat(gid,g){
   updateChatHeaderAvatar(g);
   document.getElementById('ch-name').textContent=g.name||'Grupo';
   document.getElementById('ch-status').textContent=`${Object.keys(g.members||{}).length} membros`;
-  document.getElementById('ch-aud-btn').style.display='none';
-  document.getElementById('ch-vid-btn').style.display='none';
+  document.getElementById('ch-aud-btn').style.display='';
+  document.getElementById('ch-vid-btn').style.display='';
   document.getElementById('ch-group-info-btn').style.display='flex';
   document.getElementById('typing-ind').classList.remove('on');
   // Zera contador de não lidas ao abrir o grupo
@@ -2678,6 +2786,10 @@ function formatText(raw,mentions){
 }
 
 function previewOfMsg(msg){
+  if(msg.poll)return '📊 Enquete: '+String(msg.poll.q||'').slice(0,100);
+  if(msg.loc)return '📍 Localização';
+  if(msg.contact)return '👤 Contato: '+String(msg.contact.name||'');
+  if(msg.gif)return 'GIF';
   if(msg.sticker)return `${msg.sticker} Figurinha`;
   if(msg.audioData||msg.mediaKind==='audio')return '🎤 Mensagem de voz';
   if(msg.fileData||msg.mediaKind==='image'||msg.mediaKind==='file'){
@@ -2724,6 +2836,7 @@ function previewCardHTML(pv){
 }
 
 function renderMsg(msg,msgId,replaceEl){
+  if(msg.exp&&msg.exp<=Date.now()&&msgId){expireMsg(msgId,msg);return;}
   const container=document.getElementById('msgs');
   if(!replaceEl&&msgId){
     const existing=container.querySelector(`[data-msg-id="${msgId}"]`);
@@ -2740,6 +2853,12 @@ function renderMsg(msg,msgId,replaceEl){
     attachMsgGestures(div,msgId);
   };
   const time=hhmm(msg.ts);
+
+  if(msg.sys){
+    div.className='msg-sys'; div.textContent=msg.text||'';
+    if(replaceEl) replaceEl.replaceWith(div); else{ addDaySeparator(container,msg.ts); container.appendChild(div); }
+    return;
+  }
 
   if(msg.deleted){
     div.className=`msg ${isSent?'sent':'recv'} msg-deleted`;
@@ -2774,7 +2893,12 @@ function renderMsg(msg,msgId,replaceEl){
   }
 
   let attachmentHTML='';
-  if(hasAudio){
+  if(msg.poll&&Array.isArray(msg.poll.opts)){
+    attachmentHTML=`<div class="poll-q">📊 ${esc(msg.poll.q)}</div><div class="poll-sub">${msg.poll.multi?'Escolha uma ou mais opções':'Escolha uma opção'}</div><div class="poll-body">${pollBodyHTML(msg,msgId)}</div>`;
+  }else if(msg.loc){ attachmentHTML=locCardHTML(msg.loc); }
+  else if(msg.contact){ attachmentHTML=contactCardHTML(msg.contact,msgId); }
+  else if(msg.gif){ attachmentHTML=gifHTML(msg.gif); }
+  else if(hasAudio){
     const dur=msg.audioDuration||0;
     const durLabel=`${Math.floor(dur/60)}:${(dur%60).toString().padStart(2,'0')}`;
     const audioId='audio-'+Math.random().toString(36).slice(2,9);
@@ -2810,7 +2934,7 @@ function renderMsg(msg,msgId,replaceEl){
     ${previewCardHTML(msg.preview)}
     <div class="msg-meta">
       ${moreBtnHTML}
-      <span class="msg-time">${time}</span>
+      ${msg.exp?'<span class="msg-exp" title="Mensagem temporária">⏳</span>':''}<span class="msg-time">${time}</span>
       ${isSent?'<span class="msg-check">✓✓</span>':''}
     </div>
     ${reactionsHTML}`;
@@ -2918,11 +3042,11 @@ function msgBasePath(){
 }
 
 window.openMsgContextMenu=(msgId,msg,anchor)=>{
-  if(msg.deleted)return;
+  if(msg.deleted||msg.sys)return;
   msgContextTarget={msgId,msg};
   const isSent=msg.sid===currentUser.uid;
   const within=isSent&&canEditOrDelete(msg);
-  const canEditText=within&&!msg.fileData&&!msg.audioData&&!msg.sticker;
+  const canEditText=within&&!msg.fileData&&!msg.audioData&&!msg.sticker&&!msg.poll&&!msg.loc&&!msg.contact&&!msg.gif&&!msg.mediaKind;
   const show=(id,v)=>{document.getElementById(id).style.display=v?'':'none';};
   show('msg-ctx-edit',canEditText);
   show('msg-ctx-delete',within);
@@ -3042,6 +3166,7 @@ function updateRenderedMsg(msg,msgId){
     msgDataMap.set(msgId,msg);
     const rc=el.querySelector('.msg-reactions');
     if(rc){rc.innerHTML=reactionsInner(msg,msgId);rc.style.display=hasReactions(msg)?'':'none';}
+    const pb=el.querySelector('.poll-body'); if(pb)pb.innerHTML=pollBodyHTML(msg,msgId);
     return;
   }
   renderMsg(msg,msgId,el);
@@ -3369,6 +3494,7 @@ async function filterMuted(uids,key,bypass){
 // Grava a mensagem, atualiza prévia, avisa destinatários. Devolve a chave da mensagem.
 async function deliverMessage(target,msg,previewLabel,media){
   const me=currentUser, now=Date.now();
+  if(!msg.sys&&!msg.exp){ const ttl=await ttlFor(target); if(ttl)msg={...msg,exp:now+ttl}; }
   const mentionUids=Object.keys(msg.mentions||{}).filter(u=>u!==me.uid);
   if(target.type==='group'){
     const gid=target.id, g=target.data||groups[gid]||{};
@@ -3611,6 +3737,7 @@ function saveDraft(){
 function clearDraft(){const k=curKey(); if(k){try{localStorage.removeItem(draftStoreKey(k));}catch(e){}}}
 // Chamado ao abrir qualquer conversa
 function onChatOpened(){
+  watchTtl(); watchGroupCall();
   cancelReply(); pendingMentions={}; hideMentionPop(); closeMsgSearch(); applyWallpaper();
   if(editingMsgId){editingMsgId=null;$('edit-indicator').style.display='none';}
   lastDayKey=''; newMsgCount=0; msgDataMap.clear();
@@ -3748,7 +3875,8 @@ window.confirmForward=async()=>{
       fileName:m.fileName||null,fileType:m.fileType||null,fileSize:m.fileSize||null,thumb:kind==='image'?thumb:null,
       mediaKind:kind,media:kind?true:null,
       audioType:m.audioType||null,audioDuration:m.audioDuration||null,audioWave:m.audioWave||null,
-      sticker:m.sticker||null};
+      sticker:m.sticker||null,loc:m.loc||null,contact:m.contact||null,gif:m.gif||null};
+    if(m.poll)msg.text=`📊 ${m.poll.q}\n`+m.poll.opts.map(o=>'• '+o).join('\n');
     try{ await deliverMessage({type:e.type,id:e.id,data:e.data},msg,'↪ '+(previewOfMsg(m)||'Mensagem encaminhada'),kind?{data}:null); }
     catch(err){ showNotif({emoji:'⚠️',color:'#EF4444'},'Erro',`Não foi possível encaminhar para ${e.data.name}.`); return; }
   }
@@ -3988,6 +4116,487 @@ function showNotif(sender,title,text,tag){
 }
 
 // =========================================================
+// BLOCO 5: menu de anexos, enquete, localização, contato, GIF
+// =========================================================
+window.toggleAttachMenu=()=>{
+  $('ep').classList.remove('on'); $('sticker-panel').classList.remove('on'); $('gif-panel').classList.remove('on');
+  $('attach-menu').classList.toggle('on');
+};
+window.pickAttach=(kind)=>{
+  $('attach-menu').classList.remove('on');
+  if(!currentContact)return;
+  if(kind==='file') $('file-input').click();
+  else if(kind==='poll') openPollModal();
+  else if(kind==='loc') sendLocation();
+  else if(kind==='contact') openContactPicker();
+  else if(kind==='gif') openGifPanel();
+};
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#attach-menu')&&!e.target.closest('.att-btn'))$('attach-menu')?.classList.remove('on');
+  if(!e.target.closest('#gif-panel')&&!e.target.closest('#attach-menu'))$('gif-panel')?.classList.remove('on');
+});
+
+// ---- Enquete ----
+window.openPollModal=()=>{
+  $('poll-q').value=''; $('poll-multi').checked=false; $('poll-err').textContent='';
+  $('poll-opts').innerHTML=''; addPollOption(); addPollOption();
+  $('poll-modal').classList.add('on'); setTimeout(()=>$('poll-q').focus(),100);
+};
+window.closePollModal=()=>$('poll-modal').classList.remove('on');
+window.addPollOption=()=>{
+  const box=$('poll-opts'); if(box.children.length>=6)return;
+  const i=document.createElement('input'); i.className='inp'; i.maxLength=60; i.placeholder='Opção '+(box.children.length+1);
+  box.appendChild(i);
+  $('poll-add').style.display=box.children.length>=6?'none':'';
+};
+window.sendPoll=async()=>{
+  const q=$('poll-q').value.trim().slice(0,120);
+  const opts=[...$('poll-opts').children].map(i=>i.value.trim().slice(0,60)).filter(Boolean);
+  if(!q){$('poll-err').textContent='Escreva a pergunta';return;}
+  if(opts.length<2){$('poll-err').textContent='Coloque ao menos 2 opções';return;}
+  if(!currentContact)return;
+  const t=curTarget(); if(!targetAllowed(t))return;
+  const multi=$('poll-multi').checked; closePollModal();
+  const msg={text:'',sid:currentUser.uid,sname:currentUser.displayName,ts:Date.now(),poll:{q,opts,multi},replyTo:takeReply()};
+  await deliverMessage(t,msg,`📊 Enquete: ${q}`);
+};
+function parseVotes(v,n){return String(v||'').split(',').filter(x=>x!=='').map(Number).filter(i=>Number.isInteger(i)&&i>=0&&i<n);}
+function voterName(uid){ if(uid===currentUser.uid)return 'Você'; return (contacts[uid]&&contacts[uid].name)||(userCache[uid]&&userCache[uid].name)||'Alguém'; }
+function pollBodyHTML(msg,msgId){
+  const p=msg.poll; if(!p||!Array.isArray(p.opts))return '';
+  const n=p.opts.length, counts=new Array(n).fill(0), who=p.opts.map(()=>[]);
+  let voters=0, mine=[];
+  Object.entries(msg.votes||{}).forEach(([uid,v])=>{
+    const ids=parseVotes(v,n); if(!ids.length)return; voters++;
+    ids.forEach(i=>{counts[i]++; who[i].push(voterName(uid));});
+    if(uid===currentUser.uid)mine=ids;
+  });
+  const rows=p.opts.map((o,i)=>{
+    const pct=voters?Math.round(counts[i]/voters*100):0;
+    return `<div class="poll-opt${mine.includes(i)?' mine':''}" onclick="votePoll('${safeId(msgId)}',${i})" title="${esc(who[i].join(', '))}">
+      <div class="poll-bar" style="width:${pct}%"></div>
+      <span class="poll-label">${mine.includes(i)?'✔ ':''}${esc(o)}</span><span class="poll-n">${counts[i]}</span></div>`;
+  }).join('');
+  return rows+`<div class="poll-total">${voters} ${voters===1?'voto':'votos'}</div>`;
+}
+window.votePoll=async(msgId,i)=>{
+  const msg=msgDataMap.get(msgId); if(!msg||!msg.poll)return;
+  const n=msg.poll.opts.length; let mine=parseVotes(msg.votes&&msg.votes[currentUser.uid],n);
+  if(msg.poll.multi) mine=mine.includes(i)?mine.filter(x=>x!==i):[...mine,i].sort((a,b)=>a-b);
+  else mine=mine.includes(i)?[]:[i];
+  try{ await set(ref(fbDb,`${msgBasePath()}/${msgId}/votes/${currentUser.uid}`),mine.length?mine.join(','):null); }
+  catch(e){ showNotif({emoji:'⚠️',color:'#EF4444'},'Erro','Não foi possível registrar o voto.'); }
+};
+
+// ---- Localização ----
+function osmTilesHTML(lat,lng){
+  const z=15, n=2**z, W=260, H=150;
+  const xf=(lng+180)/360*n, lr=lat*Math.PI/180, yf=(1-Math.log(Math.tan(lr)+1/Math.cos(lr))/Math.PI)/2*n;
+  const left=xf-W/2/256, top=yf-H/2/256, x0=Math.floor(left), y0=Math.floor(top);
+  let h='';
+  for(let x=x0;x<=x0+1;x++)for(let y=y0;y<=y0+1;y++){
+    if(y<0||y>=n)continue; const xx=((x%n)+n)%n;
+    h+=`<img src="https://tile.openstreetmap.org/${z}/${xx}/${y}.png" style="left:${((x-left)*256).toFixed(1)}px;top:${((y-top)*256).toFixed(1)}px" loading="lazy" referrerpolicy="origin" alt="">`;
+  }
+  return h+'<div class="loc-pin">📍</div>';
+}
+function locCardHTML(loc){
+  const lat=Number(loc&&loc.lat), lng=Number(loc&&loc.lng);
+  if(!isFinite(lat)||!isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180)return '';
+  const url=`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}`;
+  return `<a class="msg-loc" href="${url}" target="_blank" rel="noopener noreferrer">
+    <div class="loc-map">${osmTilesHTML(lat,lng)}</div>
+    <div class="loc-info"><b>📍 Localização</b><span>${lat.toFixed(5)}, ${lng.toFixed(5)}</span><small>© OpenStreetMap · toque para abrir</small></div></a>`;
+}
+window.sendLocation=async()=>{
+  if(!navigator.geolocation){showNotif({emoji:'📍',color:'#EF4444'},'Localização','Este navegador não permite obter a localização.');return;}
+  if(!currentContact)return;
+  const t=curTarget(); if(!targetAllowed(t))return;
+  showNotif({emoji:'📍',color:'#128C7E'},'Localização','Obtendo sua posição…');
+  navigator.geolocation.getCurrentPosition(async(pos)=>{
+    const loc={lat:+pos.coords.latitude.toFixed(5),lng:+pos.coords.longitude.toFixed(5)};
+    if(!confirm('Enviar sua localização atual para esta conversa?'))return;
+    const msg={text:'',sid:currentUser.uid,sname:currentUser.displayName,ts:Date.now(),loc,replyTo:takeReply()};
+    await deliverMessage(t,msg,'📍 Localização');
+  },()=>showNotif({emoji:'📍',color:'#EF4444'},'Localização','Não consegui obter a posição. Verifique a permissão do navegador.'),{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+};
+
+// ---- Contato ----
+window.openContactPicker=()=>{
+  $('cpick-list').innerHTML=Object.keys(contacts).filter(u=>isUidAllowed(u)&&contacts[u].name).map(u=>{
+    const c=contacts[u];
+    return `<div class="mention-item" onclick="sendContactCard('${safeId(u)}')"><span class="mi-av" style="background:${c.photoData?'transparent':esc(c.color||'#555')}">${c.photoData?`<img src="${esc(c.photoData)}">`:esc(c.emoji||'👤')}</span>${esc(c.name)}</div>`;
+  }).join('')||'<div style="color:var(--text2);font-size:13px;padding:8px">Você ainda não tem contatos.</div>';
+  $('cpick-modal').classList.add('on');
+};
+window.closeContactPicker=()=>$('cpick-modal').classList.remove('on');
+window.sendContactCard=async(uid)=>{
+  const c=contacts[uid]; closeContactPicker(); if(!c||!currentContact)return;
+  const t=curTarget(); if(!targetAllowed(t))return;
+  const msg={text:'',sid:currentUser.uid,sname:currentUser.displayName,ts:Date.now(),
+    contact:{uid,name:String(c.name||'').slice(0,60),emoji:c.emoji||null,color:c.color||null},replyTo:takeReply()};
+  await deliverMessage(t,msg,`👤 Contato: ${c.name}`);
+};
+function contactCardHTML(c,msgId){
+  if(!c||!/^[\w-]{3,128}$/.test(String(c.uid||'')))return '';
+  const mine=c.uid===currentUser.uid, known=!!contacts[c.uid];
+  return `<div class="msg-contact"><span class="mi-av" style="width:40px;height:40px;font-size:20px;background:${esc(c.color||'#555')}">${esc(c.emoji||'👤')}</span>
+    <div class="mc-info"><b>${esc(c.name||'Contato')}</b><small>Contato compartilhado</small></div>
+    ${mine?'':`<button class="mc-btn" onclick="openSharedContact('${safeId(c.uid)}')">${known?'Conversar':'Adicionar'}</button>`}</div>`;
+}
+window.openSharedContact=async(uid)=>{
+  if(!isUidAllowed(uid)){showNotif({emoji:'🔒',color:'#EF4444'},'Bloqueado','Este contato não está na lista permitida.');return;}
+  if(!contacts[uid]){
+    try{
+      await set(ref(fbDb,`users/${currentUser.uid}/contacts/${uid}`),true);
+      await set(ref(fbDb,`contact_requests/${uid}/${currentUser.uid}`),{
+        name:currentUser.displayName,emoji:currentUser.emoji,color:currentUser.color,photoData:currentUser.photoData||null,email:currentUser.email,ts:Date.now()});
+      showNotif({emoji:'✅',color:'#128C7E'},'Contato adicionado','Ele já aparece na sua lista.');
+    }catch(e){ showNotif({emoji:'⚠️',color:'#EF4444'},'Erro','Não foi possível adicionar o contato.'); }
+    return;
+  }
+  openChat(uid,contacts[uid]);
+};
+
+// ---- GIFs (via Worker, que guarda a chave) ----
+let gifTimer=null;
+window.openGifPanel=()=>{
+  $('gif-panel').classList.add('on'); $('gif-q').value=''; loadGifs('');
+  setTimeout(()=>$('gif-q').focus(),100);
+};
+window.onGifInput=()=>{ clearTimeout(gifTimer); gifTimer=setTimeout(()=>loadGifs($('gif-q').value.trim()),450); };
+async function loadGifs(q){
+  const grid=$('gif-grid'); grid.innerHTML='<div class="gif-msg">Carregando…</div>';
+  try{
+    const idToken=await fbAuth.currentUser.getIdToken();
+    const r=await fetch(PUSH_WORKER_URL.replace(/\/$/,'')+'/gifs',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+idToken},body:JSON.stringify({q})});
+    const j=await r.json();
+    if(!j.ok){ grid.innerHTML=`<div class="gif-msg">${j.error==='sem_chave'?'GIFs ainda não configurados (falta a chave do Giphy no Worker).':'Não foi possível buscar GIFs agora.'}</div>`; return; }
+    if(q!==($('gif-q').value.trim()))return; // resposta de busca antiga
+    grid.innerHTML=(j.gifs||[]).filter(g=>safeGif(g.url)).map(g=>`<img src="${esc(safeGif(g.preview||g.url))}" loading="lazy" data-url="${esc(g.url)}" data-w="${+g.w||200}" data-h="${+g.h||150}" onclick="sendGif(this)">`).join('')||'<div class="gif-msg">Nada encontrado.</div>';
+  }catch(e){ grid.innerHTML='<div class="gif-msg">Sem conexão com o servidor de GIFs.</div>'; }
+}
+function safeGif(u){u=String(u||'');return /^https:\/\/media\d*\.giphy\.com\//.test(u)?u:'';}
+window.sendGif=async(el)=>{
+  const url=safeGif(el.dataset.url); if(!url||!currentContact)return;
+  $('gif-panel').classList.remove('on');
+  const t=curTarget(); if(!targetAllowed(t))return;
+  const msg={text:'',sid:currentUser.uid,sname:currentUser.displayName,ts:Date.now(),gif:{url,w:+el.dataset.w||200,h:+el.dataset.h||150},replyTo:takeReply()};
+  await deliverMessage(t,msg,'GIF');
+};
+function gifHTML(g){
+  const u=safeGif(g&&g.url); if(!u)return '';
+  const w=Math.min(260,+g.w||200), h=Math.round(w*((+g.h||150)/(+g.w||200)));
+  return `<div class="msg-gif"><img src="${esc(u)}" width="${w}" height="${h}" loading="lazy" alt="GIF"><span>GIF</span></div>`;
+}
+
+// =========================================================
+// Mensagens temporárias (chat_settings/{conversa}/ttl)
+// =========================================================
+let chatTtl=0, unsubTtl=null;
+const TTL_OPTIONS=[[0,'Desativadas'],[864e5,'24 horas'],[7*864e5,'7 dias'],[90*864e5,'90 dias']];
+const ttlLabel=(ms)=>(TTL_OPTIONS.find(o=>o[0]===ms)||[0,'Desativadas'])[1];
+function settingsKeyOf(type,id){return type==='group'?'group_'+id:chatId(currentUser.uid,id);}
+function updateTtlBadge(){
+  const el=document.getElementById('ch-ttl'); if(!el)return;
+  el.style.display=chatTtl?'block':'none'; el.textContent=chatTtl?`⏳ Mensagens temporárias: ${ttlLabel(chatTtl)}`:'';
+}
+function watchTtl(){
+  if(unsubTtl){unsubTtl();unsubTtl=null;}
+  chatTtl=0; updateTtlBadge();
+  if(!currentContact)return;
+  const tok=msgListenToken;
+  unsubTtl=onValue(ref(fbDb,`chat_settings/${settingsKeyOf(currentChatType,currentContact.uid)}`),(s)=>{
+    if(tok!==msgListenToken)return;
+    const v=s.val(); chatTtl=(v&&Number(v.ttl))||0; updateTtlBadge();
+  });
+}
+async function ttlFor(target){
+  if(currentContact&&target.type===currentChatType&&target.id===currentContact.uid) return chatTtl;
+  try{ const s=await get(ref(fbDb,`chat_settings/${settingsKeyOf(target.type,target.id)}`)); return (s.val()&&Number(s.val().ttl))||0; }
+  catch(e){return 0;}
+}
+let ttlTarget=null;
+window.openTtlPicker=async()=>{
+  if(!convMenuTarget)return;
+  const {type,uid}=convMenuTarget; closeConvMenu();
+  if(type==='group'&&!isGroupAdmin(groups[uid])){
+    showNotif({emoji:'⏳',color:'#555'},'Só administradores','Apenas administradores do grupo podem mudar as mensagens temporárias.');return;}
+  const key=settingsKeyOf(type,uid); ttlTarget={type,uid,key};
+  let cur=0; try{ const s=await get(ref(fbDb,`chat_settings/${key}`)); cur=(s.val()&&Number(s.val().ttl))||0; }catch(e){}
+  $('ttl-list').innerHTML=TTL_OPTIONS.map(([ms,l])=>`<label class="fwd-item"><input type="radio" name="ttl" value="${ms}" ${ms===cur?'checked':''}> <span>${l}</span></label>`).join('');
+  $('ttl-modal').classList.add('on');
+};
+window.closeTtlPicker=()=>{$('ttl-modal').classList.remove('on');ttlTarget=null;};
+window.saveTtl=async()=>{
+  if(!ttlTarget)return;
+  const t=ttlTarget, ms=Number(document.querySelector('#ttl-list input:checked')?.value||0); closeTtlPicker();
+  try{
+    await set(ref(fbDb,`chat_settings/${t.key}`),{ttl:ms||null,by:currentUser.uid,ts:Date.now()});
+    const data=t.type==='group'?groups[t.uid]:contacts[t.uid];
+    const text=ms?`⏳ ${currentUser.displayName} ativou as mensagens temporárias (${ttlLabel(ms)}). As novas mensagens somem depois desse prazo.`
+                 :`⏳ ${currentUser.displayName} desativou as mensagens temporárias.`;
+    await deliverMessage({type:t.type,id:t.uid,data},{text,sys:'ttl',sid:currentUser.uid,sname:currentUser.displayName,ts:Date.now()},ms?`⏳ Temporárias: ${ttlLabel(ms)}`:'⏳ Temporárias desativadas');
+  }catch(e){ showNotif({emoji:'⚠️',color:'#EF4444'},'Erro','Não foi possível alterar as mensagens temporárias.'); }
+};
+// Mensagem vencida: some da tela e qualquer participante que a veja apaga do banco (e a mídia junto)
+const expiring=new Set();
+function expireMsg(msgId,msg){
+  const el=document.querySelector(`#msgs [data-msg-id="${safeId(msgId)}"]`); if(el)el.remove();
+  msgDataMap.delete(msgId);
+  if(!currentContact||expiring.has(msgId))return; expiring.add(msgId);
+  remove(ref(fbDb,`${msgBasePath()}/${msgId}`)).catch(()=>{});
+  if(msg&&(msg.media||msg.mediaKind)) remove(ref(fbDb,mediaPath(msgId))).catch(()=>{});
+}
+function pruneExpired(){
+  if(!currentContact)return; const now=Date.now();
+  [...msgDataMap.entries()].forEach(([id,m])=>{ if(m.exp&&m.exp<=now)expireMsg(id,m); });
+}
+setInterval(pruneExpired,20000);
+
+// =========================================================
+// Compartilhar tela e utilidades de vídeo
+// =========================================================
+function screenSupported(){return !!(navigator.mediaDevices&&navigator.mediaDevices.getDisplayMedia);}
+function videoSenderOf(p){
+  const t=p.getTransceivers().find(t=>t.receiver&&t.receiver.track&&t.receiver.track.kind==='video');
+  return t?t.sender:null;
+}
+// Quem não tem câmera precisa poder "enviar" vídeo mesmo assim, para compartilhar a tela sem renegociar a chamada
+function ensureVideoSendable(p){
+  p.getTransceivers().forEach(t=>{
+    if(t.receiver&&t.receiver.track&&t.receiver.track.kind==='video'&&!t.sender.track&&(t.direction==='recvonly'||t.direction==='inactive')) t.direction='sendrecv';
+  });
+}
+async function getScreenTrack(){
+  const ds=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{max:15}},audio:false});
+  return ds;
+}
+let screenStream=null, remoteScreen=false;
+function setScreenFlag(on){
+  if(!callPartnerId||!currentUser)return;
+  set(ref(fbDb,`signaling/${myCallPath(callPartnerId)}/${currentUser.uid}/screen`),on?true:null).catch(()=>{});
+}
+window.toggleScreenShare=async()=>{
+  if(screenStream){await stopScreenShare();return;}
+  if(!pc)return;
+  try{
+    const ds=await getScreenTrack(), track=ds.getVideoTracks()[0], sender=videoSenderOf(pc);
+    if(!sender){ds.getTracks().forEach(t=>t.stop());showNotif({emoji:'🖥️',color:'#EF4444'},'Tela','A chamada ainda não está pronta para compartilhar.');return;}
+    await sender.replaceTrack(track);
+    screenStream=ds; track.onended=()=>stopScreenShare();
+    $('b-screen').classList.add('c-on');
+    $('localVideo').srcObject=ds;
+    setScreenFlag(true);
+  }catch(e){ if(e&&e.name!=='NotAllowedError')showNotif({emoji:'🖥️',color:'#EF4444'},'Tela','Não foi possível compartilhar a tela.'); }
+};
+async function stopScreenShare(){
+  if(!screenStream)return;
+  const s=screenStream; screenStream=null; s.getTracks().forEach(t=>{t.onended=null;t.stop();});
+  if(pc){ const sender=videoSenderOf(pc), cam=localStream&&localStream.getVideoTracks()[0]; try{ if(sender)await sender.replaceTrack(cam||null); }catch(e){} }
+  const lv=$('localVideo'); if(lv)lv.srcObject=localStream;
+  $('b-screen')?.classList.remove('c-on'); setScreenFlag(false);
+}
+function applyRemoteScreenUI(){
+  const rv=$('remoteVideo'), av=$('vc-avatar-area');
+  if(remoteScreen){ rv.style.display='block'; av.style.display='none'; rv.classList.add('screen'); $('vc-st').textContent='Compartilhando a tela'; }
+  else{ rv.classList.remove('screen'); if(isAudioCall){rv.style.display='none';av.style.display='flex';} if(callTimer)$('vc-st').textContent='Em chamada'; }
+}
+
+// =========================================================
+// Chamada em grupo (malha WebRTC, até 4 pessoas)
+// group_calls/{gid}/info | parts/{uid}=ts | sig/{de}/{para}/{offer|answer|cand}
+// =========================================================
+const GC_MAX=4;
+let gc=null, gcInfo=null, gcParts={}, gcWatchUnsubs=[];
+const gcRef=(gid,p)=>ref(fbDb,`group_calls/${gid}${p?'/'+p:''}`);
+
+function renderGcBanner(){
+  const el=$('gcall-banner'); if(!el)return;
+  const n=Object.keys(gcParts||{}).length;
+  const show=currentChatType==='group'&&currentContact&&n>0&&!(gc&&gc.gid===currentContact.uid);
+  el.style.display=show?'flex':'none';
+  if(show){
+    $('gcall-banner-txt').textContent=`📞 Chamada em grupo em andamento · ${n} ${n===1?'pessoa':'pessoas'}${gcInfo&&gcInfo.video===false?' (áudio)':''}`;
+    $('gcall-join').disabled=n>=GC_MAX; $('gcall-join').textContent=n>=GC_MAX?'Lotada':'Entrar';
+  }
+}
+function watchGroupCall(){
+  gcWatchUnsubs.forEach(u=>u()); gcWatchUnsubs=[]; gcInfo=null; gcParts={}; renderGcBanner();
+  if(currentChatType!=='group'||!currentContact)return;
+  const gid=currentContact.uid, tok=msgListenToken;
+  gcWatchUnsubs.push(onValue(gcRef(gid,'info'),s=>{ if(tok!==msgListenToken)return; gcInfo=s.val(); renderGcBanner(); }));
+  gcWatchUnsubs.push(onValue(gcRef(gid,'parts'),s=>{ if(tok!==msgListenToken)return; gcParts=s.val()||{}; renderGcBanner(); }));
+}
+window.joinGcFromBanner=()=>{ if(currentChatType==='group'&&currentContact) joinGroupCall(currentContact.uid,!(gcInfo&&gcInfo.video===false)); };
+window.startGroupCall=(kind)=>{
+  if(!currentContact||currentChatType!=='group')return;
+  if(Object.keys(gcParts||{}).length) return joinGroupCall(currentContact.uid,kind!=='audio');
+  joinGroupCall(currentContact.uid,kind!=='audio');
+};
+
+function gcAddTile(uid,name,local){
+  const g=$('gc-grid'); let t=document.getElementById('gct-'+uid); if(t)return t;
+  const u=local?currentUser:(contacts[uid]||userCache[uid]||{});
+  t=document.createElement('div'); t.className='gc-tile'; t.id='gct-'+uid;
+  t.innerHTML=`<video autoplay playsinline ${local?'muted':''}></video><div class="gc-av"></div><div class="gc-nm"></div><div class="gc-st"></div>`;
+  const av=t.querySelector('.gc-av');
+  if(u.photoData){av.style.background='transparent';const im=document.createElement('img');im.src=safeData(u.photoData);av.appendChild(im);}
+  else{av.textContent=u.emoji||'👤';av.style.background=u.color||'#555';}
+  t.querySelector('.gc-nm').textContent=local?'Você':name;
+  g.appendChild(t); g.dataset.n=g.children.length; return t;
+}
+function gcUpdateTile(uid){
+  const t=document.getElementById('gct-'+uid); if(!t)return;
+  const v=t.querySelector('video'), s=v.srcObject;
+  const has=!!s&&s.getVideoTracks().some(x=>x.readyState==='live'&&!x.muted&&x.enabled);
+  t.classList.toggle('has-video',has);
+}
+function gcSetStatus(uid,txt){ const t=document.getElementById('gct-'+uid); if(t)t.querySelector('.gc-st').textContent=txt||''; }
+function gcCountTitle(){ if(gc)$('gc-title').textContent=`${currentUserGroupName()} · ${gc.peers.size+1}/${GC_MAX}`; }
+function currentUserGroupName(){ return (groups[gc.gid]&&groups[gc.gid].name)||'Grupo'; }
+
+async function joinGroupCall(gid,video){
+  if(gc)return;
+  if(pc||(document.getElementById('vc')&&document.getElementById('vc').classList.contains('on'))){
+    showNotif({emoji:'📞',color:'#EF4444'},'Ocupado','Encerre a chamada atual antes de entrar em uma chamada em grupo.');return;}
+  const g=groups[gid]; if(!g)return;
+  if((Object.keys(g.members||{})).filter(m=>m!==currentUser.uid).some(m=>!isUidAllowed(m))){
+    showNotif({emoji:'🔒',color:'#EF4444'},'Bloqueado','Este grupo contém membros fora da lista permitida.');return;}
+  let parts={}; try{ parts=(await get(gcRef(gid,'parts'))).val()||{}; }catch(e){}
+  const live=Object.keys(parts).filter(u=>u!==currentUser.uid);
+  if(live.length>=GC_MAX-1){showNotif({emoji:'📞',color:'#EF4444'},'Chamada lotada',`A chamada em grupo comporta até ${GC_MAX} pessoas.`);return;}
+  let stream=null, hasCam=false;
+  try{ stream=await navigator.mediaDevices.getUserMedia({audio:true,video:!!video}); hasCam=!!video; }
+  catch(e){ try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }catch(e2){} }
+  if(!stream){showNotif({emoji:'🎙️',color:'#EF4444'},'Sem microfone','Não foi possível acessar o microfone/câmera.');return;}
+  const myTs=Date.now();
+  gc={gid,video:!!video,hasCam,myTs,peers:new Map(),unsubs:[],stream,muted:false,camOff:!hasCam,screen:null,timer:null,sec:0,odRef:null};
+  $('gc').classList.add('on'); $('gc-grid').innerHTML='';
+  $('gc-b-cam').style.display=hasCam?'':'none'; $('gc-b-screen').style.display=screenSupported()?'':'none';
+  ['gc-b-mute','gc-b-cam','gc-b-screen'].forEach(i=>$(i).classList.remove('c-on'));
+  const lt=gcAddTile(currentUser.uid,'',true); lt.querySelector('video').srcObject=stream; gcUpdateTile(currentUser.uid);
+  gcCountTitle();
+  gc.timer=setInterval(()=>{gc.sec++;$('gc-timer').textContent=`${String(Math.floor(gc.sec/60)).padStart(2,'0')}:${String(gc.sec%60).padStart(2,'0')}`;},1000);
+  $('gc-timer').textContent='00:00';
+  try{ await remove(gcRef(gid,`sig/${currentUser.uid}`)); }catch(e){}
+  const first=live.length===0;
+  if(first){ try{ await set(gcRef(gid,'info'),{by:currentUser.uid,byName:currentUser.displayName,ts:myTs,video:!!video}); }catch(e){} }
+  try{
+    const pr=gcRef(gid,`parts/${currentUser.uid}`); gc.odRef=onDisconnect(pr); gc.odRef.remove();
+    await set(pr,myTs);
+  }catch(e){ showNotif({emoji:'⚠️',color:'#EF4444'},'Erro','Não foi possível entrar na chamada.'); leaveGroupCall(); return; }
+  const me=gc;
+  me.unsubs.push(onValue(gcRef(gid,'parts'),s=>{
+    if(gc!==me)return; const p=s.val()||{};
+    Object.keys(p).forEach(u=>{ if(u!==currentUser.uid&&!me.peers.has(u)&&me.peers.size<GC_MAX-1) gcAddPeer(u,Number(p[u])||0); });
+    [...me.peers.keys()].forEach(u=>{ if(!p[u])gcRemovePeer(u); });
+    gcCountTitle();
+  }));
+  if(first){
+    const text=`📞 ${currentUser.displayName} iniciou uma chamada em grupo${video?'':' (áudio)'}. Toque em "Entrar" no topo da conversa.`;
+    deliverMessage({type:'group',id:gid,data:g},{text,sys:'gcall',sid:currentUser.uid,sname:currentUser.displayName,ts:Date.now()},'📞 Chamada em grupo').catch(()=>{});
+  }
+  renderGcBanner();
+}
+
+function gcAddPeer(uid,theirTs){
+  const me=gc, g=me.gid, myUid=currentUser.uid;
+  const iOffer=theirTs<me.myTs||(theirTs===me.myTs&&uid<myUid);
+  const p=new RTCPeerConnection(RTC_CONFIG);
+  const peer={uid,pc:p,iOffer,stream:new MediaStream(),remoteSet:false,queue:[],unsubs:[]};
+  me.peers.set(uid,peer);
+  const name=voterName(uid)==='Alguém'?'Participante':voterName(uid);
+  const tile=gcAddTile(uid,name,false); const vEl=tile.querySelector('video'); vEl.srcObject=peer.stream;
+  gcSetStatus(uid,'Conectando...');
+  const mine=me.screen?me.screen.getVideoTracks()[0]:null;
+  me.stream.getTracks().forEach(t=>p.addTrack(t,me.stream));
+  if(iOffer&&!me.stream.getVideoTracks().length) p.addTransceiver('video',{direction:'sendrecv'});
+  p.onicecandidate=(e)=>{ if(e.candidate) push(gcRef(g,`sig/${myUid}/${uid}/cand`),e.candidate.toJSON()).catch(()=>{}); };
+  p.ontrack=(e)=>{
+    peer.stream.addTrack(e.track); vEl.srcObject=peer.stream;
+    e.track.onmute=e.track.onunmute=()=>gcUpdateTile(uid); gcUpdateTile(uid);
+  };
+  p.onconnectionstatechange=()=>{
+    const s=p.connectionState;
+    gcSetStatus(uid,s==='connected'?'':s==='failed'?'Sem conexão':s==='disconnected'?'Reconectando...':'Conectando...');
+  };
+  const flush=async()=>{ peer.remoteSet=true; for(const c of peer.queue){try{await p.addIceCandidate(c);}catch(e){}} peer.queue=[]; };
+  const base=`sig/${uid}/${myUid}`;
+  peer.unsubs.push(onChildAdded(gcRef(g,`${base}/cand`),async(s)=>{
+    const c=s.val(); if(!c)return;
+    if(peer.remoteSet){ try{await p.addIceCandidate(c);}catch(e){} } else peer.queue.push(c);
+  }));
+  if(iOffer){
+    (async()=>{
+      try{
+        const o=await p.createOffer(); await p.setLocalDescription(o);
+        await set(gcRef(g,`sig/${myUid}/${uid}/offer`),{type:o.type,sdp:o.sdp});
+      }catch(e){console.warn('[GC] offer',e);}
+    })();
+    peer.unsubs.push(onValue(gcRef(g,`${base}/answer`),async(s)=>{
+      if(!s.exists()||peer.remoteSet||p.signalingState==='closed')return; peer.remoteSet=true;
+      try{ await p.setRemoteDescription(s.val()); await flush(); }catch(e){peer.remoteSet=false;console.warn('[GC] answer',e);}
+    }));
+  }else{
+    let got=false;
+    peer.unsubs.push(onValue(gcRef(g,`${base}/offer`),async(s)=>{
+      if(!s.exists()||got||p.signalingState==='closed')return; got=true;
+      try{
+        await p.setRemoteDescription(s.val()); ensureVideoSendable(p);
+        const a=await p.createAnswer(); await p.setLocalDescription(a);
+        await set(gcRef(g,`sig/${myUid}/${uid}/answer`),{type:a.type,sdp:a.sdp});
+        await flush();
+        if(me.screen)gcReplaceVideo(me.screen.getVideoTracks()[0]);
+      }catch(e){got=false;console.warn('[GC] offer',e);}
+    }));
+  }
+}
+function gcRemovePeer(uid){
+  const peer=gc&&gc.peers.get(uid); if(!peer)return;
+  peer.unsubs.forEach(u=>{try{u();}catch(e){}}); try{peer.pc.close();}catch(e){}
+  gc.peers.delete(uid); const t=document.getElementById('gct-'+uid); if(t)t.remove();
+  $('gc-grid').dataset.n=$('gc-grid').children.length;
+}
+function gcReplaceVideo(track){
+  if(!gc)return;
+  gc.peers.forEach(peer=>{ const s=videoSenderOf(peer.pc); if(s)s.replaceTrack(track||null).catch(()=>{}); });
+}
+window.gcToggleMute=()=>{ if(!gc)return; gc.muted=!gc.muted; gc.stream.getAudioTracks().forEach(t=>t.enabled=!gc.muted); $('gc-b-mute').classList.toggle('c-on',gc.muted); };
+window.gcToggleCam=()=>{ if(!gc||!gc.hasCam)return; gc.camOff=!gc.camOff; gc.stream.getVideoTracks().forEach(t=>t.enabled=!gc.camOff); $('gc-b-cam').classList.toggle('c-on',gc.camOff); gcUpdateTile(currentUser.uid); };
+window.gcToggleScreen=async()=>{
+  if(!gc)return;
+  if(gc.screen){ gcStopScreen(); return; }
+  try{
+    const ds=await getScreenTrack(), tr=ds.getVideoTracks()[0]; gc.screen=ds; tr.onended=()=>gcStopScreen();
+    gcReplaceVideo(tr); $('gc-b-screen').classList.add('c-on');
+    const lv=document.querySelector('#gct-'+currentUser.uid+' video'); lv.srcObject=ds; gcUpdateTile(currentUser.uid);
+  }catch(e){ if(e&&e.name!=='NotAllowedError')showNotif({emoji:'🖥️',color:'#EF4444'},'Tela','Não foi possível compartilhar a tela.'); }
+};
+function gcStopScreen(){
+  if(!gc||!gc.screen)return; const s=gc.screen; gc.screen=null; s.getTracks().forEach(t=>{t.onended=null;t.stop();});
+  gcReplaceVideo(gc.hasCam?gc.stream.getVideoTracks()[0]:null);
+  const lv=document.querySelector('#gct-'+currentUser.uid+' video'); if(lv)lv.srcObject=gc.stream;
+  $('gc-b-screen').classList.remove('c-on'); gcUpdateTile(currentUser.uid);
+}
+window.leaveGroupCall=async()=>{
+  if(!gc)return; const me=gc; gc=null;
+  clearInterval(me.timer);
+  if(me.screen)me.screen.getTracks().forEach(t=>{t.onended=null;t.stop();});
+  me.unsubs.forEach(u=>{try{u();}catch(e){}});
+  [...me.peers.keys()].forEach(u=>{ const peer=me.peers.get(u); peer.unsubs.forEach(x=>{try{x();}catch(e){}}); try{peer.pc.close();}catch(e){} });
+  me.peers.clear(); me.stream.getTracks().forEach(t=>t.stop());
+  $('gc').classList.remove('on'); $('gc-grid').innerHTML='';
+  try{ if(me.odRef)await me.odRef.cancel(); }catch(e){}
+  try{ await remove(gcRef(me.gid,`parts/${currentUser.uid}`)); }catch(e){}
+  try{ await remove(gcRef(me.gid,`sig/${currentUser.uid}`)); }catch(e){}
+  try{ const left=(await get(gcRef(me.gid,'parts'))).val(); if(!left||!Object.keys(left).length) await remove(gcRef(me.gid)); }catch(e){}
+  renderGcBanner();
+};
+
+window.__gcState=()=>gc?[...gc.peers].map(([u,p])=>[u,p.pc.connectionState]):null; // diagnóstico (console)
+
+// =========================================================
 // VIDEO CALL (WebRTC real, sinalização via Firebase)
 // =========================================================
 // =========================================================
@@ -4005,13 +4614,13 @@ let callPartnerId=null; // uid do outro lado da chamada
 let unsubSignal=null;   // cleanup do listener de sinalização
 let isCaller=false;
 let isAudioCall=false;  // true quando a chamada atual é só de áudio
-let remoteDescSet=false; // marca, de forma síncrona, se já processamos o offer/answer remoto desta chamada
+let remoteMedia=null; let remoteDescSet=false; // marca, de forma síncrona, se já processamos o offer/answer remoto desta chamada
 
 function myCallPath(otherUid){ return chatId(currentUser.uid,otherUid); }
 
 function createPeerConnection(otherUid){
   pc=new RTCPeerConnection(RTC_CONFIG);
-  remoteDescSet=false;
+  remoteDescSet=false; remoteMedia=new MediaStream();
 
   pc.onicecandidate=(e)=>{
     if(e.candidate){
@@ -4033,10 +4642,10 @@ function createPeerConnection(otherUid){
     const rv=document.getElementById('remoteVideo');
     // Sempre atribui a stream para garantir que o áudio remoto seja reproduzido
     // (o elemento <video> também reproduz as tracks de áudio do MediaStream)
-    rv.srcObject=e.streams[0];
+    remoteMedia.addTrack(e.track); rv.srcObject=remoteMedia;
     if(e.track.kind==='video'){
-      rv.style.display='block';
-      document.getElementById('vc-avatar-area').style.display='none';
+      const showV=()=>{ if(!isAudioCall||remoteScreen){ rv.style.display='block'; document.getElementById('vc-avatar-area').style.display='none'; } };
+      e.track.onunmute=showV; if(!e.track.muted)showV();
     }
     // Receber uma track remota é evidência prática de que a chamada está
     // funcionando, mesmo que connectionstatechange ainda não tenha confirmado
@@ -4084,6 +4693,10 @@ function createPeerConnection(otherUid){
   if(localStream){
     localStream.getTracks().forEach(track=>pc.addTrack(track,localStream));
   }
+  // Sem câmera (chamada de áudio ou câmera negada): reserva um canal de vídeo para poder compartilhar a tela depois
+  if(isCaller&&!(localStream&&localStream.getVideoTracks().length)) pc.addTransceiver('video',{direction:'sendrecv'});
+  remoteScreen=false; screenStream=null;
+  $('b-screen').style.display=screenSupported()?'':'none'; $('b-screen').classList.remove('c-on');
   return pc;
 }
 
@@ -4113,6 +4726,7 @@ function listenSignaling(otherUid){
       remoteDescSet=true; // marca ANTES do await, mesma proteção do h1
       try{
         await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
+        ensureVideoSendable(pc);
         const answer=await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await set(ref(fbDb,`signaling/${path}/${currentUser.uid}/answer`),{type:answer.type,sdp:answer.sdp});
@@ -4134,8 +4748,9 @@ function listenSignaling(otherUid){
     }
   });
 
+  const h5=onValue(ref(fbDb,`signaling/${path}/${remoteUid}/screen`),(snap)=>{ remoteScreen=!!snap.val(); applyRemoteScreenUI(); });
   unsubSignal=()=>{
-    h1();h2();h3();h4();
+    h1();h2();h3();h4();h5();
   };
 }
 
@@ -4147,6 +4762,7 @@ async function cleanupSignaling(otherUid){
 
 window.startCall=async(callType)=>{
   if(!currentContact)return;
+  if(currentChatType==='group')return startGroupCall(callType);
   // Guard de lista restrita: bloqueia chamadas para contatos não permitidos
   if(!isUidAllowed(currentContact.uid)){
     showNotif({emoji:'🔒',color:'#EF4444'},'Bloqueado','Lista restrita ativa: este contato não está na lista permitida.');
@@ -4208,6 +4824,8 @@ window.endCall=async(remoteInitiated)=>{
   document.getElementById('remoteVideo').style.display='none';
   document.querySelector('.vc-pip').style.display='';
   stopTimer();
+  if(screenStream){ const s=screenStream; screenStream=null; s.getTracks().forEach(t=>{t.onended=null;t.stop();}); }
+  remoteScreen=false; document.getElementById('remoteVideo').classList.remove('screen'); $('b-screen').classList.remove('c-on');
   if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}
   if(pc){pc.close();pc=null;}
   const partner=callPartnerId;

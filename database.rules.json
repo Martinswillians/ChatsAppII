@@ -83,6 +83,18 @@
         ".read": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid) || ($chatId.beginsWith('group_') && root.child('groups').child($chatId.replace('group_', '')).child('members').child(auth.uid).exists()))",
         ".write": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid) || ($chatId.beginsWith('group_') && root.child('groups').child($chatId.replace('group_', '')).child('members').child(auth.uid).exists()) || (!newData.exists() && $chatId.beginsWith('group_') && !root.child('groups').child($chatId.replace('group_', '')).exists()))"
       }
+    },
+    "group_calls": {
+      "$gid": {
+        ".read": "auth != null && root.child('groups').child($gid).child('members').child(auth.uid).exists()",
+        ".write": "auth != null && root.child('groups').child($gid).child('members').child(auth.uid).exists()"
+      }
+    },
+    "chat_settings": {
+      "$chatId": {
+        ".read": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid) || ($chatId.beginsWith('group_') && root.child('groups').child($chatId.replace('group_', '')).child('members').child(auth.uid).exists()))",
+        ".write": "auth != null && ($chatId.beginsWith(auth.uid + '_') || $chatId.endsWith('_' + auth.uid) || ($chatId.beginsWith('group_') && root.child('groups').child($chatId.replace('group_', '')).child('members').child(auth.uid).exists()))"
+      }
     }
   }
 }
