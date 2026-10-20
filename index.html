@@ -53,7 +53,10 @@ video { display:block; max-width:100%; max-height:100%; }
 .note code { background:#0d1f14;padding:1px 5px;border-radius:4px;font-size:11px;color:#4ade80; }
 
 /* === AUTH SCREEN === */
-#auth-screen { display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:var(--bg-sidebar);gap:0;padding:20px; }
+#splash { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;height:100vh;background:var(--bg-sidebar);color:var(--text2);font-size:14px; }
+#splash .sp-dot { width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+#auth-screen { display:none;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:var(--bg-sidebar);gap:0;padding:20px; }
 .auth-logo { width:72px;height:72px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px; }
 .auth-logo svg { width:44px;height:44px;fill:white; }
 #auth-screen h1 { font-size:26px;font-weight:300;letter-spacing:3px;margin-bottom:6px; }
@@ -462,6 +465,9 @@ video { display:block; max-width:100%; max-height:100%; }
 <body>
 
 <div id="global-error-banner" style="display:none;position:fixed;top:0;left:0;right:0;background:#EF4444;color:white;padding:10px 16px;font-size:13px;text-align:center;z-index:9999;font-family:sans-serif"></div>
+
+<!-- CARREGANDO (evita mostrar o login enquanto o app confirma a sessão) -->
+<div id="splash"><div class="sp-dot"></div><div>Carregando…</div></div>
 
 <!-- AUTH SCREEN -->
 <div id="auth-screen">
@@ -1867,16 +1873,20 @@ window.previewPhoto=(e)=>{
 // =========================================================
 // INICIALIZAÇÃO DO FIREBASE
 // =========================================================
+function hideSplash(){ const sp=document.getElementById('splash'); if(sp)sp.style.display='none'; }
 function showAuth(){
+  hideSplash();
   document.getElementById('auth-screen').style.display='flex';
 }
+// Se a confirmação da sessão demorar demais (rede ruim), mostra o login em vez de ficar preso na tela de carregamento
+let authResolved=false;
+setTimeout(()=>{ if(!authResolved)showAuth(); },10000);
 
 try{
   fbApp=initializeApp(firebaseConfig);
   fbAuth=getAuth(fbApp);
   fbDb=getDatabase(fbApp);
-  showAuth();
-  onAuthStateChanged(fbAuth,onAuthChange);
+  onAuthStateChanged(fbAuth,(u)=>{ authResolved=true; return onAuthChange(u); });
 }catch(e){
   console.error('Erro ao conectar ao Firebase:',e);
   document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#FF4444;font-family:sans-serif;text-align:center;padding:20px"><div><h2>⚠️ Não foi possível conectar ao Firebase</h2><p style="color:#8696A0;margin-top:10px">Verifique sua conexão com a internet ou as credenciais do projeto.</p></div></div>';
@@ -1951,8 +1961,8 @@ function closeCallNotif(fromId){
 
 async function onAuthChange(user){
   if(user){
-    const snap=await get(ref(fbDb,`users/${user.uid}`));
-    const d=snap.val()||{};
+    let d={};
+    try{ const snap=await Promise.race([get(ref(fbDb,`users/${user.uid}`)),new Promise((_,rj)=>setTimeout(()=>rj(new Error('timeout')),8000))]); d=snap.val()||{}; }catch(e){ console.warn('[Login] perfil demorou a carregar:',e); }
     currentUser={
       uid:user.uid, email:user.email,
       displayName:d.name||user.displayName||'Usuário',
@@ -2060,6 +2070,7 @@ function stopAppListeners(){
 
 function showApp(){
   stopAppListeners(); // garante que não sobram listeners de uma sessão anterior
+  hideSplash();
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').classList.add('on');
   document.getElementById('my-name').textContent=currentUser.displayName;
