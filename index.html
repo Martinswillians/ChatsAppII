@@ -1077,7 +1077,7 @@ video { display:block; max-width:100%; max-height:100%; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, initializeAuth, browserLocalPersistence, indexedDBLocalPersistence, browserSessionPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getDatabase, ref, set, get, push, onChildAdded, onChildChanged, onChildRemoved, onValue, off, update, onDisconnect, remove, serverTimestamp, query, limitToLast, orderByKey, endBefore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getMessaging, getToken, deleteToken, isSupported as fcmSupported } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
@@ -1880,11 +1880,16 @@ function showAuth(){
 }
 // Se a confirmação da sessão demorar demais (rede ruim), mostra o login em vez de ficar preso na tela de carregamento
 let authResolved=false;
-setTimeout(()=>{ if(!authResolved)showAuth(); },10000);
+const wasLoggedIn=()=>{ try{return localStorage.getItem('chatsapp_li')==='1';}catch(e){return false;} };
+const setLoggedFlag=(v)=>{ try{ v?localStorage.setItem('chatsapp_li','1'):localStorage.removeItem('chatsapp_li'); }catch(e){} };
+setTimeout(()=>{ if(!authResolved&&!wasLoggedIn())showAuth(); },10000);
 
 try{
   fbApp=initializeApp(firebaseConfig);
-  fbAuth=getAuth(fbApp);
+  // localStorage primeiro: no iPhone o IndexedDB costuma ser descartado e a sessão se perdia (pedia login todo dia)
+  try{ fbAuth=initializeAuth(fbApp,{persistence:[browserLocalPersistence,indexedDBLocalPersistence,browserSessionPersistence]}); }
+  catch(e){ fbAuth=getAuth(fbApp); }
+  try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   fbDb=getDatabase(fbApp);
   onAuthStateChanged(fbAuth,(u)=>{ authResolved=true; return onAuthChange(u); });
 }catch(e){
@@ -1970,12 +1975,14 @@ async function onAuthChange(user){
       photoData:d.photoData||null,
       location:d.location||''
     };
+    setLoggedFlag(true);
     showApp();
     startPresence(user.uid);
     if(new URLSearchParams(location.search).get('diag')==='1') setTimeout(()=>window.diagPush(),2500);
   }else{
     stopAppListeners();
     document.getElementById('app').classList.remove('on','show-chat');
+    if(wasLoggedIn()){ const le=document.getElementById('l-err'); if(le)le.textContent='O navegador não manteve sua sessão. Entre novamente.'; setLoggedFlag(false); }
     showAuth();
   }
 }
@@ -2037,6 +2044,7 @@ window.doLogout=async()=>{
   try{ await unregisterPush(); }catch(e){}
   if(currentUser) await update(ref(fbDb,`users/${currentUser.uid}`),{online:false,lastSeen:serverTimestamp()});
   presenceUid=null;
+  setLoggedFlag(false);
   await signOut(fbAuth);
 };
 
