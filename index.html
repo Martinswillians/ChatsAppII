@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>💬</text></svg>">
+<link rel="icon" type="image/png" href="./icons/icon-192.png">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChatsApp - Mensagens com privacidade e segurança</title>
@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChatsApp">
-<link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4ac_3d.png">
+<link rel="apple-touch-icon" href="./icons/icon-180.png">
 <script>
 (function(){try{var m=localStorage.getItem('chatsapp-theme');if(m==='light'||m==='dark')document.documentElement.setAttribute('data-theme',m);}catch(e){}})();
 </script>
@@ -1123,7 +1123,7 @@ let muted=false, camOff=false, unsubMsgs=null, typingTimer=null;
 // Push em segundo plano (FCM). Gere a chave em Firebase Console > Configurações do projeto >
 // Cloud Messaging > Certificados push da Web > "Gerar par de chaves" e cole abaixo.
 const VAPID_KEY='BN5F8ydEpYXauV2p4dJtT7eZv9OXLcy95yKfpjKcH29UF6Mn2J1qceLMNN_6pC2enxD4ogOTE964OcbMOy3DllY';
-const DEFAULT_ICON='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4ac_3d.png';
+const DEFAULT_ICON='./icons/icon-192.png';
 // URL do Worker da Cloudflare que envia o push com o app fechado (veja worker/ e o README).
 const PUSH_WORKER_URL='https://chatsapp-push.willbrasilia.workers.dev';
 let pushStatus='ainda não tentou', swError='', presenceUid=null;

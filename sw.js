@@ -1,5 +1,5 @@
 // Service Worker do ChatsApp Família: recebe push (FCM) com o app fechado e mostra a notificação.
-const ICON='https://cdn.jsdelivr.net/gh/shuding/fluentui-emoji-unicode/assets/1f4ac_3d.png';
+const ICON='./icons/icon-192.png', BADGE='./icons/badge-96.png';
 
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',(e)=>e.waitUntil((async()=>{
@@ -35,7 +35,7 @@ self.addEventListener('push',(event)=>{
 
     if(kind==='call'){
       await self.registration.showNotification(d.title||'Chamada',{
-        body:d.body||'Chamada recebida',icon:ICON,badge:ICON,tag,renotify:true,
+        body:d.body||'Chamada recebida',icon:ICON,badge:BADGE,tag,renotify:true,
         requireInteraction:true,vibrate:[300,150,300,150,300,150,300],
         actions:[{action:'answer',title:'Atender'},{action:'reject',title:'Recusar'}],
         data:{key:d.key||'',ts:Date.now(),kind}
@@ -45,7 +45,7 @@ self.addEventListener('push',(event)=>{
     }
     if(kind==='call-end'){
       await self.registration.showNotification(d.title||'Chamada perdida',{
-        body:d.body||'',icon:ICON,badge:ICON,tag:'missed-'+(d.key||''),
+        body:d.body||'',icon:ICON,badge:BADGE,tag:'missed-'+(d.key||''),
         data:{key:d.key||'',ts:Date.now(),kind}
       });
       await updateBadge();
@@ -56,7 +56,7 @@ self.addEventListener('push',(event)=>{
     const recent=(await self.registration.getNotifications({tag}))
       .some(n=>n.data&&n.data.ts&&Date.now()-n.data.ts<10000);
     await self.registration.showNotification(d.title||'ChatsApp',{
-      body:d.body||'Nova mensagem',icon:ICON,badge:ICON,tag,renotify:!recent,
+      body:d.body||'Nova mensagem',icon:ICON,badge:BADGE,tag,renotify:!recent,
       vibrate:[120,60,120],data:{key:d.key||'',ts:Date.now()}
     });
     await updateBadge();

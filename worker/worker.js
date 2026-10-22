@@ -14,7 +14,8 @@ const DEFAULT_ORIGIN = 'https://martinswillians.github.io';
 const DEFAULT_PROJECT = 'chatssappii';
 const DEFAULT_DB = 'https://chatssappii-default-rtdb.firebaseio.com';
 const MAX_TARGETS = 8;            // destinatários por pedido
-const MAX_TOKENS_PER_USER = 4;    // aparelhos por pessoa (o plano grátis limita 50 chamadas por pedido)
+const MAX_TOKENS_PER_USER = 8;    // aparelhos por pessoa
+const SEND_BUDGET = 38;           // envios por pedido (o plano grátis limita 50 chamadas externas por pedido)
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -114,8 +115,8 @@ async function verifyIdToken(token, projectId) {
 }
 
 // ---------- Realtime Database (REST, como administrador) ----------
-async function dbGetShallow(env, path, at) {
-  const url = (env.DATABASE_URL || DEFAULT_DB) + '/' + path + '.json?shallow=true';
+async function dbGetJson(env, path, at) {
+  const url = (env.DATABASE_URL || DEFAULT_DB) + '/' + path + '.json';
   const res = await fetch(url, { headers: { Authorization: 'Bearer ' + at } });
   if (!res.ok) throw new Error('Realtime Database ' + res.status + ' em ' + path);
   return res.json();
@@ -127,7 +128,8 @@ async function dbDelete(env, path, at) {
 }
 
 // ---------- envio FCM ----------
-async function sendToToken(env, at, projectId, uid, token, data) {
+async function sendToToken(env, at, projectId, uid, token, data, errs) {
+  const isCall = data.kind === 'call';
   const res = await fetch('https://fcm.googleapis.com/v1/projects/' + projectId + '/messages:send', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + at, 'Content-Type': 'application/json' },
@@ -135,8 +137,8 @@ async function sendToToken(env, at, projectId, uid, token, data) {
       message: {
         token,
         data,
-        webpush: { headers: { Urgency: 'high', TTL: '86400' } },
-        android: { priority: 'high' },
+        webpush: { headers: { Urgency: 'high', TTL: isCall ? '60' : '86400' } },
+        android: isCall ? { priority: 'high', ttl: '60s' } : { priority: 'high' },
       },
     }),
   });
@@ -149,6 +151,7 @@ async function sendToToken(env, at, projectId, uid, token, data) {
     return 'removed';
   }
   console.error('FCM erro', res.status, JSON.stringify(err));
+  errs.push(res.status + ' ' + (status || '') + ': ' + String((err.error && err.error.message) || '').slice(0, 160));
   return 'failed';
 }
 
@@ -180,32 +183,58 @@ export default {
       // 2) pedido válido?
       const body = await req.json().catch(() => null);
       if (!body) return json({ ok: false, error: 'corpo inválido' }, 400, cors);
-      const key = String(body.key || '');
-      const targets = [...new Set(Array.isArray(body.toUids) ? body.toUids.map(String) : [])]
-        .filter((u) => u !== caller.sub);
-      if (!/^(group_)?[\w-]{3,128}$/.test(key)) return json({ ok: false, error: 'key inválida' }, 400, cors);
+      const kind = ['message', 'call', 'call-end'].includes(body.kind) ? body.kind : 'message';
+      const callType = body.callType === 'audio' ? 'audio' : 'video';
+      const isTest = body.test === true; // diagnóstico: manda um push para os próprios aparelhos
+      const key = isTest ? caller.sub : String(body.key || '');
+      const targets = isTest ? [caller.sub]
+        : [...new Set(Array.isArray(body.toUids) ? body.toUids.map(String) : [])].filter((u) => u !== caller.sub);
+      // chamadas só existem entre duas pessoas (a key é o uid de quem liga, nunca de grupo)
+      const keyRe = kind === 'message' ? /^(group_)?[\w-]{3,128}$/ : /^(?!group_)[\w-]{3,128}$/;
+      if (!keyRe.test(key)) return json({ ok: false, error: 'key inválida' }, 400, cors);
       if (!targets.length || targets.length > MAX_TARGETS || !targets.every((u) => /^[\w-]{6,128}$/.test(u)))
         return json({ ok: false, error: 'destinatários inválidos' }, 400, cors);
-      const data = {
-        title: String(body.title || 'ChatsApp').slice(0, 80),
-        body: String(body.body || 'Nova mensagem').slice(0, 140),
-        key,
-        tag: 'chat-' + key,
-      };
+      const who = String(body.title || 'Alguém').slice(0, 60);
+      let data;
+      if (kind === 'call') {
+        data = {
+          kind, key, tag: 'call-' + key,
+          title: callType === 'audio' ? '📞 Chamada de áudio' : '📹 Videochamada',
+          body: who + ' está te chamando',
+        };
+      } else if (kind === 'call-end') {
+        data = { kind, key, tag: 'call-' + key, title: 'Chamada perdida', body: who + ' tentou falar com você' };
+      } else if (isTest) {
+        data = { kind, key, tag: 'chat-teste', title: 'Teste do ChatsApp', body: 'Se você viu este aviso, o push em segundo plano está funcionando.' };
+      } else {
+        data = {
+          kind, key, tag: 'chat-' + key,
+          title: String(body.title || 'ChatsApp').slice(0, 80),
+          body: String(body.body || 'Nova mensagem').slice(0, 140),
+        };
+      }
 
       // 3) busca os aparelhos de cada destinatário e envia
       const at = await getAccessToken(env);
-      const stats = { sent: 0, removed: 0, failed: 0 };
-      await Promise.all(targets.map(async (uid) => {
-        const map = await dbGetShallow(env, 'fcm_tokens/' + uid, at);
-        const tokens = Object.keys(map || {}).slice(0, MAX_TOKENS_PER_USER);
-        const results = await Promise.all(tokens.map((t) => sendToToken(env, at, projectId, uid, t, data)));
+      const stats = { found: 0, sent: 0, removed: 0, failed: 0 };
+      const errs = [];
+      const perUser = Math.max(1, Math.min(MAX_TOKENS_PER_USER, Math.floor(SEND_BUDGET / targets.length)));
+      await Promise.all(targets.map(async (uid) => { try {
+        // Aparelhos mais recentes primeiro (ts = última vez que o app foi aberto no aparelho).
+        // Antes pegava os 4 primeiros por ordem alfabética, e um PC novo podia ficar de fora.
+        const map = await dbGetJson(env, 'fcm_tokens/' + uid, at);
+        const tokens = Object.entries(map || {})
+          .sort((a, b) => ((b[1] && b[1].ts) || 0) - ((a[1] && a[1].ts) || 0))
+          .slice(0, perUser)
+          .map((e) => e[0]);
+        stats.found += tokens.length;
+        const results = await Promise.all(tokens.map((t) => sendToToken(env, at, projectId, uid, t, data, errs)));
         results.forEach((r) => { stats[r === 'sent' ? 'sent' : r === 'removed' ? 'removed' : 'failed']++; });
-      }));
-      return json({ ok: true, ...stats }, 200, cors);
+      } catch (e) { stats.failed++; errs.push('destinatário: ' + String((e && e.message) || e).slice(0, 160)); } }));
+      return json({ ok: true, ...stats, errors: errs.slice(0, 3) }, 200, cors);
     } catch (e) {
       console.error('Erro no Worker:', e && e.message);
-      return json({ ok: false, error: 'erro interno' }, 500, cors);
+      return json({ ok: false, error: 'erro interno', detail: String((e && e.message) || e).slice(0, 200) }, 500, cors);
     }
   },
 };
