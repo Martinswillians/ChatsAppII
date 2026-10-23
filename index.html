@@ -345,7 +345,10 @@ video { display:block; max-width:100%; max-height:100%; }
 #vc.audio-mode .vc-pip { display:none; }
 #vc.audio-mode .vc-av { width:130px;height:130px;font-size:60px; }
 #vc.audio-mode .c-cam { display:none; }
-#localVideo { width:100%;height:100%;object-fit:cover; }
+#localVideo { width:100%;height:100%;object-fit:cover;transform:scaleX(-1); }
+#localVideo.noflip { transform:none; }
+.gc-tile.me video { transform:scaleX(-1); }
+.gc-tile.me.noflip video { transform:none; }
 #remoteVideo { width:100%;height:100%;object-fit:cover;display:none; }
 .vc-timer { position:absolute;top:18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.5);padding:5px 14px;border-radius:20px;font-size:15px;color:white;font-family:monospace;z-index:10; }
 .vc-ctrl { flex:0 0 auto;padding:22px;background:rgba(0,0,0,.9);display:flex;justify-content:center;gap:18px;position:relative;z-index:20; }
@@ -4422,7 +4425,7 @@ window.toggleScreenShare=async()=>{
     await sender.replaceTrack(track);
     screenStream=ds; track.onended=()=>stopScreenShare();
     $('b-screen').classList.add('c-on');
-    $('localVideo').srcObject=ds;
+    $('localVideo').srcObject=ds; $('localVideo').classList.add('noflip');
     setScreenFlag(true);
   }catch(e){ if(e&&e.name!=='NotAllowedError')showNotif({emoji:'🖥️',color:'#EF4444'},'Tela','Não foi possível compartilhar a tela.'); }
 };
@@ -4430,7 +4433,7 @@ async function stopScreenShare(){
   if(!screenStream)return;
   const s=screenStream; screenStream=null; s.getTracks().forEach(t=>{t.onended=null;t.stop();});
   if(pc){ const sender=videoSenderOf(pc), cam=localStream&&localStream.getVideoTracks()[0]; try{ if(sender)await sender.replaceTrack(cam||null); }catch(e){} }
-  const lv=$('localVideo'); if(lv)lv.srcObject=localStream;
+  const lv=$('localVideo'); if(lv){lv.srcObject=localStream;lv.classList.remove('noflip');}
   $('b-screen')?.classList.remove('c-on'); setScreenFlag(false);
 }
 function applyRemoteScreenUI(){
@@ -4474,7 +4477,7 @@ window.startGroupCall=(kind)=>{
 function gcAddTile(uid,name,local){
   const g=$('gc-grid'); let t=document.getElementById('gct-'+uid); if(t)return t;
   const u=local?currentUser:(contacts[uid]||userCache[uid]||{});
-  t=document.createElement('div'); t.className='gc-tile'; t.id='gct-'+uid;
+  t=document.createElement('div'); t.className='gc-tile'+(local?' me':''); t.id='gct-'+uid;
   t.innerHTML=`<video autoplay playsinline ${local?'muted':''}></video><div class="gc-av"></div><div class="gc-nm"></div><div class="gc-st"></div>`;
   const av=t.querySelector('.gc-av');
   if(u.photoData){av.style.background='transparent';const im=document.createElement('img');im.src=safeData(u.photoData);av.appendChild(im);}
@@ -4607,13 +4610,13 @@ window.gcToggleScreen=async()=>{
   try{
     const ds=await getScreenTrack(), tr=ds.getVideoTracks()[0]; gc.screen=ds; tr.onended=()=>gcStopScreen();
     gcReplaceVideo(tr); $('gc-b-screen').classList.add('c-on');
-    const lv=document.querySelector('#gct-'+currentUser.uid+' video'); lv.srcObject=ds; gcUpdateTile(currentUser.uid);
+    const lv=document.querySelector('#gct-'+currentUser.uid+' video'); lv.srcObject=ds; lv.parentElement.classList.add('noflip'); gcUpdateTile(currentUser.uid);
   }catch(e){ if(e&&e.name!=='NotAllowedError')showNotif({emoji:'🖥️',color:'#EF4444'},'Tela','Não foi possível compartilhar a tela.'); }
 };
 function gcStopScreen(){
   if(!gc||!gc.screen)return; const s=gc.screen; gc.screen=null; s.getTracks().forEach(t=>{t.onended=null;t.stop();});
   gcReplaceVideo(gc.hasCam?gc.stream.getVideoTracks()[0]:null);
-  const lv=document.querySelector('#gct-'+currentUser.uid+' video'); if(lv)lv.srcObject=gc.stream;
+  const lv=document.querySelector('#gct-'+currentUser.uid+' video'); if(lv){lv.srcObject=gc.stream;lv.parentElement.classList.remove('noflip');}
   $('gc-b-screen').classList.remove('c-on'); gcUpdateTile(currentUser.uid);
 }
 window.leaveGroupCall=async()=>{
