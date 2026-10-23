@@ -426,6 +426,7 @@ video { display:block; max-width:100%; max-height:100%; }
 .gif-msg{color:var(--text2);font-size:13px;padding:12px;column-span:all}
 .gif-credit{font-size:10px;color:var(--text2);text-align:right}
 .msg-gif{position:relative;line-height:0}.msg-gif img{border-radius:8px;max-width:100%;height:auto}
+.msg-gif img{min-height:60px;background:rgba(127,127,127,.15)}.msg-gif img.gif-fail{cursor:pointer;min-height:100px}
 .msg-gif span{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;line-height:1;padding:3px 5px;border-radius:4px}
 .poll-q{font-weight:600;margin-bottom:6px}.poll-sub{font-size:11px;color:var(--text2);margin-bottom:6px}
 .poll-opt{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin:4px 0;cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-size:14px;min-width:200px}
@@ -983,7 +984,8 @@ video { display:block; max-width:100%; max-height:100%; }
   <div class="vc-main">
     <div class="vc-timer" id="vc-timer">00:00</div>
     <div class="vc-remote">
-      <video id="remoteVideo" autoplay playsinline></video>
+      <video id="remoteVideo" autoplay playsinline muted></video>
+      <audio id="remoteAudio" autoplay playsinline></audio>
       <div id="vc-avatar-area" style="display:flex;flex-direction:column;align-items:center;gap:10px">
         <div class="vc-av" id="vc-av"></div>
         <div class="vc-name" id="vc-name"></div>
@@ -4301,9 +4303,15 @@ async function loadGifs(q){
     const j=await r.json();
     if(!j.ok){ grid.innerHTML=`<div class="gif-msg">${j.error==='sem_chave'?'GIFs ainda não configurados (falta a chave do Giphy no Worker).':'Não foi possível buscar GIFs agora.'}</div>`; return; }
     if(q!==($('gif-q').value.trim()))return; // resposta de busca antiga
-    grid.innerHTML=(j.gifs||[]).filter(g=>safeGif(g.url)).map(g=>`<img src="${esc(safeGif(g.preview||g.url))}" loading="lazy" data-url="${esc(g.url)}" data-w="${+g.w||200}" data-h="${+g.h||150}" onclick="sendGif(this)">`).join('')||'<div class="gif-msg">Nada encontrado.</div>';
+    grid.innerHTML=(j.gifs||[]).filter(g=>safeGif(g.url)).map(g=>`<img src="${esc(safeGif(g.preview||g.url))}" loading="lazy" onerror="gifRetry(this)" data-url="${esc(g.url)}" data-w="${+g.w||200}" data-h="${+g.h||150}" onclick="sendGif(this)">`).join('')||'<div class="gif-msg">Nada encontrado.</div>';
   }catch(e){ grid.innerHTML='<div class="gif-msg">Sem conexão com o servidor de GIFs.</div>'; }
 }
+window.gifRetry=(img,manual)=>{
+  const n=manual?0:(+img.dataset.r||0);
+  if(n>=4){ img.classList.add('gif-fail'); return; }
+  img.classList.remove('gif-fail'); img.dataset.r=n+1;
+  setTimeout(()=>{ try{ const u=new URL(img.dataset.src||img.src); u.searchParams.set('r',n+1); img.src=u.toString(); }catch(e){} },700*(n+1));
+};
 function safeGif(u){u=String(u||'');return /^https:\/\/media\d*\.giphy\.com\//.test(u)?u:'';}
 window.sendGif=async(el)=>{
   const url=safeGif(el.dataset.url); if(!url||!currentContact)return;
@@ -4315,7 +4323,7 @@ window.sendGif=async(el)=>{
 function gifHTML(g){
   const u=safeGif(g&&g.url); if(!u)return '';
   const w=Math.min(260,+g.w||200), h=Math.round(w*((+g.h||150)/(+g.w||200)));
-  return `<div class="msg-gif"><img src="${esc(u)}" width="${w}" height="${h}" loading="lazy" alt="GIF"><span>GIF</span></div>`;
+  return `<div class="msg-gif"><img src="${esc(u)}" data-src="${esc(u)}" width="${w}" height="${h}" alt="" onerror="gifRetry(this)" onclick="if(this.classList.contains('gif-fail'))gifRetry(this,true)"><span>GIF</span></div>`;
 }
 
 // =========================================================
@@ -4535,14 +4543,15 @@ function gcAddPeer(uid,theirTs){
   const peer={uid,pc:p,iOffer,stream:new MediaStream(),remoteSet:false,queue:[],unsubs:[]};
   me.peers.set(uid,peer);
   const name=voterName(uid)==='Alguém'?'Participante':voterName(uid);
-  const tile=gcAddTile(uid,name,false); const vEl=tile.querySelector('video'); vEl.srcObject=peer.stream;
+  const tile=gcAddTile(uid,name,false); const vEl=tile.querySelector('video'); vEl.srcObject=peer.stream; vEl.muted=true;
+  const aEl=document.createElement('audio'); aEl.autoplay=true; aEl.setAttribute('playsinline',''); aEl.srcObject=peer.stream; tile.appendChild(aEl); peer.audio=aEl;
   gcSetStatus(uid,'Conectando...');
   const mine=me.screen?me.screen.getVideoTracks()[0]:null;
   me.stream.getTracks().forEach(t=>p.addTrack(t,me.stream));
   if(iOffer&&!me.stream.getVideoTracks().length) p.addTransceiver('video',{direction:'sendrecv'});
   p.onicecandidate=(e)=>{ if(e.candidate) push(gcRef(g,`sig/${myUid}/${uid}/cand`),e.candidate.toJSON()).catch(()=>{}); };
   p.ontrack=(e)=>{
-    peer.stream.addTrack(e.track); vEl.srcObject=peer.stream;
+    peer.stream.addTrack(e.track); vEl.srcObject=peer.stream; aEl.srcObject=peer.stream; aEl.play().catch(()=>{});
     e.track.onmute=e.track.onunmute=()=>gcUpdateTile(uid); gcUpdateTile(uid);
   };
   p.onconnectionstatechange=()=>{
@@ -4671,6 +4680,8 @@ function createPeerConnection(otherUid){
     // Sempre atribui a stream para garantir que o áudio remoto seja reproduzido
     // (o elemento <video> também reproduz as tracks de áudio do MediaStream)
     remoteMedia.addTrack(e.track); rv.srcObject=remoteMedia;
+    // O som sai por um <audio> próprio: <video> escondido (chamada de áudio) fica mudo no iPhone
+    const ra=document.getElementById('remoteAudio'); if(ra){ if(ra.srcObject!==remoteMedia)ra.srcObject=remoteMedia; ra.play().catch(()=>{}); }
     if(e.track.kind==='video'){
       const showV=()=>{ if(!isAudioCall||remoteScreen){ rv.style.display='block'; document.getElementById('vc-avatar-area').style.display='none'; } };
       e.track.onunmute=showV; if(!e.track.muted)showV();
@@ -4849,6 +4860,7 @@ window.endCall=async(remoteInitiated)=>{
   const wasCaller=isCaller, wasConnected=!!callTimer, wasAudio=isAudioCall;
   document.getElementById('vc').classList.remove('on','audio-mode');
   document.getElementById('remoteVideo').srcObject=null;
+  { const ra=document.getElementById('remoteAudio'); if(ra)ra.srcObject=null; }
   document.getElementById('remoteVideo').style.display='none';
   document.querySelector('.vc-pip').style.display='';
   stopTimer();
@@ -4899,7 +4911,7 @@ window.toggleCam=()=>{
 
 let speakerOn=false;
 window.toggleSpeaker=async()=>{
-  const rv=document.getElementById('remoteVideo');
+  const rv=document.getElementById('remoteAudio');
   // setSinkId só é suportado em desktop (Chrome/Edge/Firefox). Navegadores
   // móveis (Chrome Android, Safari iOS) não expõem essa troca via JavaScript —
   // nesses casos o próprio sistema decide a saída de áudio automaticamente.
