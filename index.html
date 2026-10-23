@@ -2230,7 +2230,16 @@ async function setupPush(){
     const token=await getToken(fcmMessaging,{vapidKey:vapid,serviceWorkerRegistration:reg});
     if(!token){ pushStatus='o Firebase não devolveu token'; return false; }
     fcmToken=token;
-    await set(ref(fbDb,`fcm_tokens/${currentUser.uid}/${token}`),{ts:Date.now(),ua:navigator.userAgent.slice(0,120)});
+    const ua=navigator.userAgent.slice(0,120);
+    await set(ref(fbDb,`fcm_tokens/${currentUser.uid}/${token}`),{ts:Date.now(),ua});
+    // Celular reinstalado (ex.: ícone readicionado à tela inicial) deixa o token antigo valendo por um tempo e a mesma
+    // pessoa recebia o aviso em dobro. Em iPhone/Android, tokens antigos do mesmo aparelho (mesmo user-agent) são descartados.
+    if(/iPhone|iPad|Android/i.test(ua)){
+      try{
+        const all=(await get(ref(fbDb,`fcm_tokens/${currentUser.uid}`))).val()||{};
+        await Promise.all(Object.entries(all).filter(([t,v])=>t!==token&&v&&v.ua===ua).map(([t])=>remove(ref(fbDb,`fcm_tokens/${currentUser.uid}/${t}`))));
+      }catch(e){}
+    }
     console.log('[Push] aparelho registrado para notificações em segundo plano.');
     pushStatus='ok';
     return true;
