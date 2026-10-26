@@ -464,6 +464,23 @@ video { display:block; max-width:100%; max-height:100%; }
 #remoteVideo.screen{object-fit:contain;background:#000}
 .c-screen{background:#374151;color:#fff}
 @media(max-width:600px){.gc-grid[data-n="3"],.gc-grid[data-n="4"],.gc-grid[data-n="2"]{grid-template-columns:1fr 1fr}}
+/* INSTALAR O APP */
+.modal.install-modal{max-width:760px;max-height:90vh;overflow-y:auto}
+.inst-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.inst-card{background:var(--bg-input);border:1px solid var(--border);border-radius:12px;padding:14px}
+.inst-card h4{font-size:14px;margin:0 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.inst-card ol{margin:0;padding-left:18px;font-size:13px;line-height:1.5;color:var(--text)}
+.inst-card li{margin-bottom:5px}
+.inst-tag{background:var(--primary);color:#fff;font-size:10px;font-weight:600;border-radius:8px;padding:2px 7px}
+.inst-zap{white-space:pre-wrap;background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;line-height:1.5}
+.inst-row{display:flex;gap:8px;flex-wrap:wrap}
+.inst-btn{background:var(--primary);color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.inst-btn.ghost{background:var(--bg-input);color:var(--text);border:1px solid var(--border)}
+.inst-ok{background:rgba(37,211,102,.15);border:1px solid var(--primary);border-radius:10px;padding:10px 12px;font-size:13px}
+.instbar{position:fixed;left:12px;right:12px;bottom:12px;z-index:900;background:var(--bg-sidebar);border:1px solid var(--border);box-shadow:0 6px 28px rgba(0,0,0,.45);border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px;max-width:520px;margin:0 auto}
+.instbar img{border-radius:10px;flex-shrink:0}.instbar div{flex:1;font-size:13px;line-height:1.35}.instbar small{color:var(--text2)}
+.instbar .x{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:0 4px}
+.auth-install{background:none;border:none;color:var(--primary);cursor:pointer;font-size:13px;margin-top:14px;text-decoration:underline}
 </style>
 </head>
 <body>
@@ -525,6 +542,7 @@ video { display:block; max-width:100%; max-height:100%; }
     </div>
   </div>
   <div class="app-footer">By Will Martins</div>
+  <button class="auth-install" id="auth-install" onclick="openInstall()">📲 Instalar o app</button>
 </div>
 
 <!-- MAIN APP -->
@@ -760,6 +778,11 @@ video { display:block; max-width:100%; max-height:100%; }
         <div class="profile-menu-label">Privacidade</div>
         <div class="profile-menu-arrow">›</div>
       </div>
+      <div class="profile-menu-item" onclick="closeProfile();openInstall()">
+        <div class="profile-menu-icon">📲</div>
+        <div class="profile-menu-label">Instalar o app / convidar</div>
+        <div class="profile-menu-arrow">›</div>
+      </div>
       <div class="profile-menu-item" onclick="openDevices()">
         <div class="profile-menu-icon">📱</div>
         <div class="profile-menu-label">Aparelhos com notificações</div>
@@ -771,6 +794,16 @@ video { display:block; max-width:100%; max-height:100%; }
         <div class="profile-menu-arrow">›</div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- INSTALAR O APP -->
+<div class="modal-ov modal-ov-top" id="install-modal" onclick="if(event.target===this)closeInstall()">
+  <div class="modal install-modal">
+    <button class="modal-x" onclick="closeInstall()">✕</button>
+    <h3>📲 Instalar o app</h3>
+    <p style="font-size:13px;color:var(--text2);margin:0">Instale o ChatsApp na tela inicial do celular (ou na área de trabalho do computador) e abra com um toque, como um aplicativo. No iPhone, a instalação é necessária para receber notificações.</p>
+    <div id="inst-body"></div>
   </div>
 </div>
 
@@ -2059,6 +2092,86 @@ window.doRegister=async()=>{
     err.textContent=msgs[e.code]||e.message;
   }
 };
+
+
+// =========================================================
+// INSTALAR O APP (PWA) E CONVIDAR FAMILIARES
+// =========================================================
+const ehIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const ehAndroid=/Android/i.test(navigator.userAgent);
+const emApp=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const emNavegadorZap=()=>/WhatsApp|FBAN|FBAV|Instagram/i.test(navigator.userAgent);
+let deferredInstall=null;
+const siteUrl=()=>location.origin+location.pathname.replace(/index\.html$/,'');
+const msgConvite=(url)=>`💬 *ChatsApp Família*\n\nNosso app de mensagens, fotos, áudios e chamadas de vídeo só para a família, com privacidade.\n\nAbra o link, crie sua conta e instale o app na tela inicial:\n${url}`;
+function instCard(titulo,meu,passos,extra){
+  return [`<div class="inst-card"><h4>${titulo}${meu?'<span class="inst-tag">seu aparelho</span>':''}</h4><ol>${passos.map(p=>`<li>${p}</li>`).join('')}</ol>${extra||''}</div>`,meu];
+}
+function renderInstall(){
+  const url=siteUrl();
+  const btn=deferredInstall?'<p style="margin:10px 0 0"><button class="inst-btn" onclick="doInstall()">Instalar agora</button></p>':'';
+  const ios=instCard('iPhone (Safari)',ehIOS,[
+    'Abra este site no <b>Safari</b>. Se o link abriu dentro do WhatsApp, toque em <b>Abrir no Safari</b> (ícone de bússola).',
+    'Toque no botão <b>Compartilhar</b> (quadrado com uma seta para cima) na barra de baixo.',
+    'Role a lista e toque em <b>Adicionar à Tela de Início</b>.',
+    'Confirme em <b>Adicionar</b>. O ícone do ChatsApp aparece na tela inicial. Abra por ele e ative as notificações.']);
+  const and=instCard('Android (Chrome)',ehAndroid,[
+    'Abra este site no <b>Chrome</b>. Se o link abriu dentro do WhatsApp, toque em <b>⋮</b> e depois em <b>Abrir no Chrome</b>.',
+    'Toque no menu <b>⋮</b> (três pontinhos) no canto superior direito.',
+    'Toque em <b>Instalar aplicativo</b> (ou <b>Adicionar à tela inicial</b>).',
+    'Confirme em <b>Instalar</b>. O ícone aparece na tela inicial e na lista de aplicativos.'],btn);
+  const pc=instCard('Computador (Chrome ou Edge)',!ehIOS&&!ehAndroid,[
+    'Abra o site no <b>Chrome</b> ou no <b>Edge</b>.',
+    'Clique no ícone de instalar (monitor com uma seta) no fim da barra de endereço. Se não aparecer, abra o menu <b>⋮</b> do Chrome, escolha <b>Transmitir, salvar e compartilhar</b> e depois <b>Instalar página como aplicativo</b> (no Edge: <b>...</b> &gt; <b>Aplicativos</b> &gt; <b>Instalar este site como um aplicativo</b>).',
+    'Confirme em <b>Instalar</b>. O ícone é criado na área de trabalho e no menu Iniciar. Se quiser, fixe na barra de tarefas.'],btn);
+  const ordem=[ios,and,pc].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).join('');
+  const zap='https://wa.me/?text='+encodeURIComponent(msgConvite(url));
+  $('inst-body').innerHTML=`
+    ${emApp()?'<div class="inst-ok">Você já está usando o app instalado. 🎉</div>':''}
+    ${emNavegadorZap()?'<div class="inst-ok">Você abriu o link dentro de outro aplicativo. Para instalar, abra no <b>Safari</b> (iPhone) ou no <b>Chrome</b> (Android).</div>':''}
+    ${deferredInstall&&!emApp()?'<p style="margin:0"><button class="inst-btn" onclick="doInstall()">Instalar agora</button></p>':''}
+    <div class="inst-grid">${ordem}</div>
+    <h3 style="margin-top:6px">Convidar familiares</h3>
+    <p style="font-size:13px;color:var(--text2);margin:0">Esta é a mensagem que será enviada:</p>
+    <div class="inst-zap" id="inst-zap"></div>
+    <div class="inst-row">
+      <a class="inst-btn" style="background:#1fa855" target="_blank" rel="noopener" href="${zap}">Compartilhar no WhatsApp</a>
+      ${navigator.share?'<button class="inst-btn ghost" onclick="shareInvite()">Compartilhar…</button>':''}
+      <button class="inst-btn ghost" onclick="copyInvite()">Copiar link</button>
+    </div>`;
+  $('inst-zap').textContent=msgConvite(url);
+}
+window.openInstall=()=>{ $('inst-banner')?.remove(); renderInstall(); $('install-modal').classList.add('on'); };
+window.closeInstall=()=>$('install-modal').classList.remove('on');
+window.doInstall=async()=>{
+  if(!deferredInstall){ openInstall(); return; }
+  deferredInstall.prompt();
+  const r=await deferredInstall.userChoice.catch(()=>({}));
+  deferredInstall=null; $('inst-banner')?.remove();
+  if(r.outcome==='accepted'){ closeInstall(); showNotif({emoji:'📲',color:'#128C7E'},'Instalando','Procure o ícone do ChatsApp na sua tela inicial.'); }
+  else renderInstall();
+};
+window.shareInvite=async()=>{ try{ await navigator.share({title:'ChatsApp Família',text:msgConvite(siteUrl())}); }catch(e){} };
+window.copyInvite=async()=>{
+  const url=siteUrl();
+  try{ await navigator.clipboard.writeText(url); }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=url; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(_){} ta.remove(); }
+  showNotif({emoji:'📋',color:'#128C7E'},'Link copiado','Cole na conversa para convidar.');
+};
+function showInstallBanner(){
+  if(emApp()||document.getElementById('inst-banner'))return;
+  if(!(ehIOS||ehAndroid||deferredInstall))return;
+  let t=0; try{ t=+localStorage.getItem('chatsapp_inst_dismiss')||0; }catch(e){}
+  if(Date.now()-t<7*864e5||$('install-modal')?.classList.contains('on'))return;
+  const d=document.createElement('div'); d.id='inst-banner'; d.className='instbar';
+  d.innerHTML=`<img src="./icons/icon-192.png" alt="" width="40" height="40"><div><b>Instale o app do ChatsApp</b><br><small>Adicione o ícone à tela inicial${ehIOS?' do iPhone e receba notificações':''}.</small></div><button class="inst-btn" onclick="${deferredInstall?'doInstall()':'openInstall()'}">${deferredInstall?'Instalar':'Como instalar'}</button><button class="x" aria-label="Fechar aviso" onclick="dismissInstallBanner()">×</button>`;
+  document.body.appendChild(d);
+}
+window.dismissInstallBanner=()=>{ try{ localStorage.setItem('chatsapp_inst_dismiss',String(Date.now())); }catch(e){} $('inst-banner')?.remove(); };
+window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferredInstall=e; const b=$('inst-banner'); if(b){ const bt=b.querySelector('.inst-btn'); bt.textContent='Instalar'; bt.setAttribute('onclick','doInstall()'); } else setTimeout(showInstallBanner,1500); if($('install-modal').classList.contains('on'))renderInstall(); });
+window.addEventListener('appinstalled',()=>{ deferredInstall=null; $('inst-banner')?.remove(); try{renderInstall();}catch(e){} });
+setTimeout(showInstallBanner,3000);
+if(emApp()){ const b=document.getElementById('auth-install'); if(b)b.style.display='none'; }
 
 // ---- Aparelhos registrados para push ----
 let devicesCache=[];
