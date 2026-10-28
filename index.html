@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChatsApp - Mensagens com privacidade e segurança</title>
 <link rel="manifest" href="./manifest.json">
+<script>/* captura cedo o evento de instalação: ele pode disparar antes do app terminar de carregar */window.__bip=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__bip=e;window.dispatchEvent(new Event('bip-ready'));});</script>
 <meta name="theme-color" content="#25D366">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2101,7 +2102,7 @@ const ehIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform===
 const ehAndroid=/Android/i.test(navigator.userAgent);
 const emApp=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
 const emNavegadorZap=()=>/WhatsApp|FBAN|FBAV|Instagram/i.test(navigator.userAgent);
-let deferredInstall=null;
+let deferredInstall=window.__bip||null;
 const siteUrl=()=>location.origin+location.pathname.replace(/index\.html$/,'');
 const msgConvite=(url)=>`💬 *ChatsApp Família*\n\nNosso app de mensagens, fotos, áudios e chamadas de vídeo só para a família, com privacidade.\n\nAbra o link, crie sua conta e instale o app na tela inicial:\n${url}`;
 function instCard(titulo,meu,passos,extra){
@@ -2109,7 +2110,7 @@ function instCard(titulo,meu,passos,extra){
 }
 function renderInstall(){
   const url=siteUrl();
-  const btn=deferredInstall?'<p style="margin:10px 0 0"><button class="inst-btn" onclick="doInstall()">Instalar agora</button></p>':'';
+  const btn=emApp()?'':'<p style="margin:10px 0 0"><button class="inst-btn" onclick="doInstall()">Instalar agora</button></p>';
   const ios=instCard('iPhone (Safari)',ehIOS,[
     'Abra este site no <b>Safari</b>. Se o link abriu dentro do WhatsApp, toque em <b>Abrir no Safari</b> (ícone de bússola).',
     'Toque no botão <b>Compartilhar</b> (quadrado com uma seta para cima) na barra de baixo.',
@@ -2129,7 +2130,7 @@ function renderInstall(){
   $('inst-body').innerHTML=`
     ${emApp()?'<div class="inst-ok">Você já está usando o app instalado. 🎉</div>':''}
     ${emNavegadorZap()?'<div class="inst-ok">Você abriu o link dentro de outro aplicativo. Para instalar, abra no <b>Safari</b> (iPhone) ou no <b>Chrome</b> (Android).</div>':''}
-    ${deferredInstall&&!emApp()?'<p style="margin:0"><button class="inst-btn" onclick="doInstall()">Instalar agora</button></p>':''}
+    ${emApp()?'':'<p style="margin:0"><button class="inst-btn" onclick="doInstall()">Instalar agora</button></p>'}
     <div class="inst-grid">${ordem}</div>
     <h3 style="margin-top:6px">Convidar familiares</h3>
     <p style="font-size:13px;color:var(--text2);margin:0">Esta é a mensagem que será enviada:</p>
@@ -2144,7 +2145,10 @@ function renderInstall(){
 window.openInstall=()=>{ $('inst-banner')?.remove(); renderInstall(); $('install-modal').classList.add('on'); };
 window.closeInstall=()=>$('install-modal').classList.remove('on');
 window.doInstall=async()=>{
-  if(!deferredInstall){ openInstall(); return; }
+  if(!deferredInstall){
+    showNotif({emoji:'📲',color:'#128C7E'},'Instalar o app',ehIOS?'No iPhone use Compartilhar → Adicionar à Tela de Início (passos na tela).':'Este navegador não ofereceu a instalação automática. Siga os passos da tela. Se o app já estiver instalado neste aparelho, procure o ícone dele.');
+    return;
+  }
   deferredInstall.prompt();
   const r=await deferredInstall.userChoice.catch(()=>({}));
   deferredInstall=null; $('inst-banner')?.remove();
@@ -2168,7 +2172,7 @@ function showInstallBanner(){
   document.body.appendChild(d);
 }
 window.dismissInstallBanner=()=>{ try{ localStorage.setItem('chatsapp_inst_dismiss',String(Date.now())); }catch(e){} $('inst-banner')?.remove(); };
-window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferredInstall=e; const b=$('inst-banner'); if(b){ const bt=b.querySelector('.inst-btn'); bt.textContent='Instalar'; bt.setAttribute('onclick','doInstall()'); } else setTimeout(showInstallBanner,1500); if($('install-modal').classList.contains('on'))renderInstall(); });
+window.addEventListener('bip-ready',()=>{ deferredInstall=window.__bip; const b=$('inst-banner'); if(b){ const bt=b.querySelector('.inst-btn'); bt.textContent='Instalar'; bt.setAttribute('onclick','doInstall()'); } else setTimeout(showInstallBanner,1500); if($('install-modal').classList.contains('on'))renderInstall(); });
 window.addEventListener('appinstalled',()=>{ deferredInstall=null; $('inst-banner')?.remove(); try{renderInstall();}catch(e){} });
 setTimeout(showInstallBanner,3000);
 if(emApp()){ const b=document.getElementById('auth-install'); if(b)b.style.display='none'; }
