@@ -473,6 +473,7 @@ video { display:block; max-width:100%; max-height:100%; }
 .inst-card ol{margin:0;padding-left:18px;font-size:13px;line-height:1.5;color:var(--text)}
 .inst-card li{margin-bottom:5px}
 .inst-tag{background:var(--primary);color:#fff;font-size:10px;font-weight:600;border-radius:8px;padding:2px 7px}
+.inst-qr{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}.inst-qr svg{border-radius:10px;border:1px solid var(--border);max-width:100%;height:auto}.inst-qr p{margin:0;font-size:13px;color:var(--text2)}.inst-qr p span{word-break:break-all;font-size:12px}
 .inst-zap{white-space:pre-wrap;background:var(--bg-input);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;line-height:1.5}
 .inst-row{display:flex;gap:8px;flex-wrap:wrap}
 .inst-btn{background:var(--primary);color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
@@ -2108,6 +2109,95 @@ const msgConvite=(url)=>`💬 *ChatsApp Família*\n\nNosso app de mensagens, fot
 function instCard(titulo,meu,passos,extra){
   return [`<div class="inst-card"><h4>${titulo}${meu?'<span class="inst-tag">seu aparelho</span>':''}</h4><ol>${passos.map(p=>`<li>${p}</li>`).join('')}</ol>${extra||''}</div>`,meu];
 }
+// Gerador de QR Code (modo byte, correção M, versões 1–6) — sem dependências
+function qrMatrix(text){
+  const data=Array.from(new TextEncoder().encode(text));
+  const T=[null,[10,[[1,16]]],[16,[[1,28]]],[26,[[1,44]]],[18,[[2,32]]],[24,[[2,43]]],[16,[[4,27]]]];
+  const ALIGN=[null,[],[6,18],[6,22],[6,26],[6,30],[6,34]];
+  let v=1; for(;v<=6;v++){ const dc=T[v][1].reduce((a,b)=>a+b[0]*b[1],0); if(data.length<=dc-2)break; }
+  if(v>6)throw new Error('texto longo demais para o QR');
+  const [ecLen,groups]=T[v], dc=groups.reduce((a,b)=>a+b[0]*b[1],0), size=17+4*v;
+  // bits de dados
+  const bits=[]; const put=(val,n)=>{for(let i=n-1;i>=0;i--)bits.push((val>>i)&1);};
+  put(4,4); put(data.length,8); data.forEach(b=>put(b,8));
+  for(let i=0;i<4&&bits.length<dc*8;i++)bits.push(0);
+  while(bits.length%8)bits.push(0);
+  const cw=[]; for(let i=0;i<bits.length;i+=8){let b=0;for(let j=0;j<8;j++)b=b*2+bits[i+j];cw.push(b);}
+  for(let p=0xEC;cw.length<dc;p^=0xEC^0x11)cw.push(p);
+  // Reed-Solomon
+  const exp=new Array(512),log=new Array(256); let x=1;
+  for(let i=0;i<255;i++){exp[i]=x;log[x]=i;x<<=1;if(x&256)x^=0x11D;}
+  for(let i=255;i<512;i++)exp[i]=exp[i-255];
+  const mul=(a,b)=>a&&b?exp[log[a]+log[b]]:0;
+  let gen=[1]; for(let i=0;i<ecLen;i++){const n=new Array(gen.length+1).fill(0);for(let j=0;j<gen.length;j++){n[j]^=gen[j];n[j+1]^=mul(gen[j],exp[i]);}gen=n;}
+  const blocks=[]; let pos=0;
+  groups.forEach(([n,len])=>{for(let k=0;k<n;k++){const d=cw.slice(pos,pos+len);pos+=len;
+    const r=d.concat(new Array(ecLen).fill(0));
+    for(let i=0;i<len;i++){const f=r[i];if(f)for(let j=0;j<gen.length;j++)r[i+j]^=mul(gen[j],f);}
+    blocks.push({d,e:r.slice(len)});}});
+  const out=[]; const maxd=Math.max(...blocks.map(b=>b.d.length));
+  for(let i=0;i<maxd;i++)blocks.forEach(b=>{if(i<b.d.length)out.push(b.d[i]);});
+  for(let i=0;i<ecLen;i++)blocks.forEach(b=>out.push(b.e[i]));
+  const stream=[]; out.forEach(b=>put2(b));
+  function put2(b){for(let i=7;i>=0;i--)stream.push((b>>i)&1);}
+  // matriz
+  const M=Array.from({length:size},()=>new Array(size).fill(false)), F=Array.from({length:size},()=>new Array(size).fill(false));
+  const setF=(xx,yy,val)=>{if(xx<0||yy<0||xx>=size||yy>=size)return;M[yy][xx]=val;F[yy][xx]=true;};
+  const finder=(cx,cy)=>{for(let dy=-4;dy<=4;dy++)for(let dx=-4;dx<=4;dx++){const d=Math.max(Math.abs(dx),Math.abs(dy));setF(cx+dx,cy+dy,d!==4&&d!==2);}};
+  finder(3,3);finder(size-4,3);finder(3,size-4);
+  for(let i=0;i<size;i++){if(!F[6][i])setF(i,6,i%2===0);if(!F[i][6])setF(6,i,i%2===0);}
+  const al=ALIGN[v];
+  al.forEach(a=>al.forEach(b=>{ if((a===6&&b===6)||(a===6&&b===al[al.length-1])||(b===6&&a===al[al.length-1]))return;
+    for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++)setF(b+dx,a+dy,Math.max(Math.abs(dx),Math.abs(dy))!==1);}));
+  // reserva formato
+  const drawFormat=(mask)=>{
+    const dd=(0<<3)|mask; let rem=dd; for(let i=0;i<10;i++)rem=(rem<<1)^((rem>>9)*0x537);
+    const f=((dd<<10)|rem)^0x5412, bit=i=>((f>>i)&1)===1;
+    for(let i=0;i<=5;i++)setF(8,i,bit(i)); setF(8,7,bit(6)); setF(8,8,bit(7)); setF(7,8,bit(8));
+    for(let i=9;i<15;i++)setF(14-i,8,bit(i));
+    for(let i=0;i<8;i++)setF(size-1-i,8,bit(i));
+    for(let i=8;i<15;i++)setF(8,size-15+i,bit(i));
+    setF(8,size-8,true);
+  };
+  drawFormat(0);
+  // dados em zigue-zague
+  let k=0;
+  for(let right=size-1;right>=1;right-=2){ if(right===6)right=5;
+    for(let vert=0;vert<size;vert++)for(let j=0;j<2;j++){
+      const xx=right-j, up=((right+1)&2)===0, yy=up?size-1-vert:vert;
+      if(!F[yy][xx]&&k<stream.length){M[yy][xx]=stream[k++]===1;}
+    }}
+  const maskFn=[(x,y)=>(x+y)%2===0,(x,y)=>y%2===0,(x,y)=>x%3===0,(x,y)=>(x+y)%3===0,(x,y)=>(Math.floor(x/3)+Math.floor(y/2))%2===0,(x,y)=>x*y%2+x*y%3===0,(x,y)=>(x*y%2+x*y%3)%2===0,(x,y)=>((x+y)%2+x*y%3)%2===0];
+  const apply=(m)=>{for(let y=0;y<size;y++)for(let xx=0;xx<size;xx++)if(!F[y][xx]&&maskFn[m](xx,y))M[y][xx]=!M[y][xx];};
+  const penalty=()=>{
+    let p=0;
+    const line=(get)=>{ let run=1; for(let i=1;i<size;i++){ if(get(i)===get(i-1)){run++;if(run===5)p+=3;else if(run>5)p++;}else run=1; }
+      const s=Array.from({length:size},(_,i)=>get(i)?1:0).join('');
+      const re=/(?:00001011101|10111010000)/g; let m; while((m=re.exec(s))){p+=40;re.lastIndex=m.index+1;} };
+    for(let y=0;y<size;y++)line(i=>M[y][i]); for(let xx=0;xx<size;xx++)line(i=>M[i][xx]);
+    for(let y=0;y<size-1;y++)for(let xx=0;xx<size-1;xx++){const c=M[y][xx];if(c===M[y][xx+1]&&c===M[y+1][xx]&&c===M[y+1][xx+1])p+=3;}
+    let dark=0;for(let y=0;y<size;y++)for(let xx=0;xx<size;xx++)if(M[y][xx])dark++;
+    p+=Math.floor(Math.abs(dark*20-size*size*10)/(size*size))*10; return p;};
+  let best=0,bp=Infinity;
+  for(let m=0;m<8;m++){apply(m);drawFormat(m);const pp=penalty();if(pp<bp){bp=pp;best=m;}apply(m);}
+  apply(best);drawFormat(best);
+  return M;
+}
+function qrSvg(text,px){
+  const M=qrMatrix(text),n=M.length,q=4;let d='';
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(M[y][x])d+=`M${x+q} ${y+q}h1v1h-1z`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n+2*q} ${n+2*q}" width="${px}" height="${px}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#111B21"/></svg>`;
+}
+
+window.downloadQr=()=>{
+  try{
+    const M=qrMatrix(siteUrl()),n=M.length,qz=4,sc=12,S=(n+2*qz)*sc;
+    const c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');
+    g.fillStyle='#fff';g.fillRect(0,0,S,S);g.fillStyle='#111B21';
+    for(let y=0;y<n;y++)for(let x=0;x<n;x++)if(M[y][x])g.fillRect((x+qz)*sc,(y+qz)*sc,sc,sc);
+    c.toBlob(b=>{const u=URL.createObjectURL(b),l=document.createElement('a');l.href=u;l.download='qrcode-chatsapp.png';document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);});
+  }catch(e){showNotif({emoji:'⚠️',color:'#c0392b'},'QR Code','Não foi possível baixar.');}
+};
 function renderInstall(){
   const url=siteUrl();
   const btn=emApp()?'':'<p style="margin:10px 0 0"><button class="inst-btn" onclick="doInstall()">Instalar agora</button></p>';
@@ -2132,6 +2222,8 @@ function renderInstall(){
     ${emNavegadorZap()?'<div class="inst-ok">Você abriu o link dentro de outro aplicativo. Para instalar, abra no <b>Safari</b> (iPhone) ou no <b>Chrome</b> (Android).</div>':''}
     ${emApp()?'':'<p style="margin:0"><button class="inst-btn" onclick="doInstall()">Instalar agora</button></p>'}
     <div class="inst-grid">${ordem}</div>
+    <h3 style="margin-top:6px">QR Code do app</h3>
+    <div class="inst-qr"><div id="inst-qr"></div><p>Aponte a câmera do celular para abrir o ChatsApp.<br><span id="inst-qr-url"></span></p><button class="inst-btn ghost" onclick="downloadQr()">Baixar QR Code</button></div>
     <h3 style="margin-top:6px">Convidar familiares</h3>
     <p style="font-size:13px;color:var(--text2);margin:0">Esta é a mensagem que será enviada:</p>
     <div class="inst-zap" id="inst-zap"></div>
@@ -2141,6 +2233,8 @@ function renderInstall(){
       <button class="inst-btn ghost" onclick="copyInvite()">Copiar link</button>
     </div>`;
   $('inst-zap').textContent=msgConvite(url);
+  try{ $('inst-qr').innerHTML=qrSvg(url,200); }catch(e){ $('inst-qr').textContent=''; }
+  $('inst-qr-url').textContent=url;
 }
 window.openInstall=()=>{ $('inst-banner')?.remove(); renderInstall(); $('install-modal').classList.add('on'); };
 window.closeInstall=()=>$('install-modal').classList.remove('on');
